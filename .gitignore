@@ -1,0 +1,5 @@
+.env
+*.out
+coverage.html
+agent/bin/
+node_modules/
