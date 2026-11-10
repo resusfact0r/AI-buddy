@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // часовые пояса внутри минимального образа
 
 	"ai-buddy/agent/internal/apiclient"
 	"ai-buddy/agent/internal/config"

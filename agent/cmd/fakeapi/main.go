@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	_ "time/tzdata" // часовые пояса внутри минимального образа
 
 	"ai-buddy/agent/internal/fakeapi"
 )
