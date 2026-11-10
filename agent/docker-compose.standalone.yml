@@ -1,0 +1,68 @@
+# Автономный запуск части Бэкенда 2 — БЕЗ основного API Бэкенда 1.
+# Вместо него поднимается fakeapi: in-memory имитация с синтетическими данными.
+# Нужен для разработки фронта и проверки агента до интеграции:
+#   docker compose -f agent/docker-compose.standalone.yml up --build
+# В общем docker-compose.yml используется настоящий api (см. compose.snippet.yml).
+services:
+  api:
+    build: .
+    command: ["fakeapi"]
+    environment:
+      FAKEAPI_ADDR: ":8080"
+      TZ: ${TZ:-Europe/Moscow}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  mcp:
+    build: .
+    command: ["mcp"]
+    environment:
+      API_BASE_URL: http://api:8080
+    ports:
+      - "8082:8082"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/healthz"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+
+  agent:
+    build: .
+    command: ["agent"]
+    environment:
+      API_BASE_URL: http://api:8080
+      MCP_URL: http://mcp:8082
+      REDIS_URL: redis://redis:6379/0
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-openai/gpt-4o-mini}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      TZ: ${TZ:-Europe/Moscow}
+    ports:
+      - "8081:8081"
+    depends_on:
+      mcp:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 3s
+      timeout: 2s
+      retries: 10

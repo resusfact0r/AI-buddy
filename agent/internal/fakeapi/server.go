@@ -41,6 +41,8 @@ type Server struct {
 	chat      map[string][]map[string]any
 	events    []Event
 	failNext  int
+	failReads int
+	idemSeen  []string
 	nextReqID int
 	hits      map[string]int
 }
@@ -84,17 +86,34 @@ func (s *Server) Events() []Event {
 // Hits возвращает число обращений к маршруту вида "POST /requests/leave".
 func (s *Server) Hits(route string) int { s.mu.Lock(); defer s.mu.Unlock(); return s.hits[route] }
 
-// RequestCount возвращает число заявок заданного типа.
-func (s *Server) RequestCount(typ string) int {
+// RequestCount возвращает число заявок заданного типа; status "" — любой статус.
+func (s *Server) RequestCount(typ, status string) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	n := 0
 	for _, r := range s.requests {
-		if r.Type == typ {
+		if r.Type == typ && (status == "" || r.Status == status) {
 			n++
 		}
 	}
 	return n
+}
+
+// AccessStatus возвращает статус доступа пользователя к системе.
+func (s *Server) AccessStatus(userID int, system string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.access[userID][system]
+}
+
+// FailReads заставляет следующие n запросов чтения (GET) вернуть 503.
+func (s *Server) FailReads(n int) { s.mu.Lock(); s.failReads = n; s.mu.Unlock() }
+
+// LastIdempotencyKeys возвращает ключи идемпотентности, с которыми приходили запросы.
+func (s *Server) LastIdempotencyKeys() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.idemSeen...)
 }
 
 // TaskStatus возвращает статус задачи пользователя (для проверок в тестах).
@@ -144,7 +163,17 @@ func (s *Server) Handler() http.Handler {
 			}
 			s.mu.Lock()
 			s.hits[pattern]++
-			res, e := h(u, r)
+			if k := r.Header.Get("Idempotency-Key"); k != "" {
+				s.idemSeen = append(s.idemSeen, k)
+			}
+			var res any
+			var e *apiErr
+			if r.Method == http.MethodGet && s.failReads > 0 && !strings.HasPrefix(parts[1], "/auth") {
+				s.failReads--
+				e = errUpstream
+			} else {
+				res, e = h(u, r)
+			}
 			s.mu.Unlock()
 			if e != nil {
 				writeErr(w, e)
@@ -680,12 +709,16 @@ func stems(text string) []string {
 }
 
 func matchAll(query []string, text string) bool {
-	have := map[string]bool{}
-	for _, st := range stems(text) {
-		have[st] = true
-	}
+	have := stems(text)
 	for _, q := range query {
-		if !have[q] {
+		found := false
+		for _, st := range have {
+			if strings.HasPrefix(st, q) {
+				found = true
+				break
+			}
+		}
+		if !found {
 			return false
 		}
 	}

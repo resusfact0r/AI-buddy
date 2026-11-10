@@ -185,15 +185,6 @@ func (c *Client) SaveMessage(ctx context.Context, token string, m ChatMessage) e
 	return err
 }
 
-// History читает историю диалога.
-func (c *Client) History(ctx context.Context, token, conversationID string, limit int) (json.RawMessage, error) {
-	q := url.Values{"limit": {fmt.Sprint(limit)}}
-	if conversationID != "" {
-		q.Set("conversation_id", conversationID)
-	}
-	return c.Get(ctx, token, "/chat/history", q)
-}
-
 // LogEvent пишет событие для метрик пользы.
 func (c *Client) LogEvent(ctx context.Context, token, typ string, payload map[string]any) error {
 	_, err := c.Do(ctx, Request{Method: http.MethodPost, Path: "/events", Token: token,

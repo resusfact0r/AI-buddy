@@ -546,4 +546,3 @@ func (o *Orchestrator) Cancel(ctx context.Context, id Identity, token, actionID 
 	o.remember(id, token, a.ConversationID, "", "[Пользователь отменил карточку: "+a.Summary+"]", nil)
 	return o.Store.SaveAction(ctx, a, max(a.ExpiresAt.Sub(o.Now()), time.Minute))
 }
-

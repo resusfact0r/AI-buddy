@@ -24,7 +24,7 @@ var (
 	reISO      = regexp.MustCompile(`\b(\d{4})-(\d{2})-(\d{2})\b`)
 	reDot      = regexp.MustCompile(`\b(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\b`)
 	reDayRange = regexp.MustCompile(`(\d{1,2})\s*(?:-|–|—|по)\s*(\d{1,2})\s+` + monthAlt)
-	reDayMonth = regexp.MustCompile(`(\d{1,2})(?:-?го)?\s+` + monthAlt)
+	reDayMonth = regexp.MustCompile(`(\d{1,2})(?:-?го)?\s+` + monthAlt + `(?:\s+(\d{4}))?`)
 	reWeekday  = regexp.MustCompile(`(понедельник|вторник|сред[ауы]|четверг|пятниц|суббот|воскресень)`)
 	reRelative = regexp.MustCompile(`(позавчера|послезавтра|вчера|завтра|сегодня)`)
 	reInDays   = regexp.MustCompile(`через\s+(\d{1,2})\s+(?:дн|день)`)
@@ -109,7 +109,15 @@ func Parse(text string, today time.Time) (from, to time.Time, ok bool) {
 	}
 	for _, m := range reDayMonth.FindAllStringSubmatchIndex(s, -1) {
 		d, _ := strconv.Atoi(s[m[2]:m[3]])
-		if t, ok := futureDate(today, monthIndex(s[m[4]:m[5]]), d); ok {
+		mon := monthIndex(s[m[4]:m[5]])
+		if m[6] >= 0 { // год указан явно — не переносим на будущее
+			y, _ := strconv.Atoi(s[m[6]:m[7]])
+			if t := time.Date(y, mon, d, 0, 0, 0, 0, time.UTC); t.Day() == d {
+				add(m[0], t)
+			}
+			continue
+		}
+		if t, ok := futureDate(today, mon, d); ok {
 			add(m[0], t)
 		}
 	}

@@ -65,16 +65,6 @@ func ForRole(role string) []Spec {
 	return out
 }
 
-// Find ищет инструмент по имени.
-func Find(name string) (Spec, bool) {
-	for _, s := range All() {
-		if s.Name == name {
-			return s, true
-		}
-	}
-	return Spec{}, false
-}
-
 func str(args map[string]any, key string) string {
 	switch v := args[key].(type) {
 	case string:

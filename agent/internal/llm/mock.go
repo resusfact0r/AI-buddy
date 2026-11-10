@@ -149,7 +149,7 @@ var (
 	reLeave         = regexp.MustCompile(`(отгул|отпуск|выходной\s+за\s+свой|day\s*off|взять\s+день)`)
 	reStatusAsk     = regexp.MustCompile(`(одобрили|согласовали|подтвердили|отклонили|статус|что\s+с\s+(моим|моей)|рассмотрели)`)
 	reAccess        = regexp.MustCompile(`(доступ)`)
-	reTaskDone      = regexp.MustCompile(`(^|\s)я\s+(уже\s+)?(сделал|прочитал|прочел|прошел|прошла|выполнил|закончил|настроил|посетил|изучил|познакомил|собрал|взял|сходил|был[аи]?\s+на|отправил)`)
+	reTaskDone      = regexp.MustCompile(`(^|\s)я\s+(уже\s+)?(сделал|получил|прочитал|прочел|прошел|прошла|выполнил|закончил|настроил|посетил|изучил|познакомил|собрал|взял|сходил|был[аи]?\s+на|отправил)`)
 	reMarkDone      = regexp.MustCompile(`(отметь|закрой|заверши)\s+(задач|как\s+выполн)`)
 	reNextSteps     = regexp.MustCompile(`(что\s+(мне\s+)?(еще\s+)?(делать|сделать)|что\s+(мне\s+)?дальше|что\s+дальше|следующ\S+\s+шаг|что\s+(я\s+)?(еще\s+)?не\s+сделал|мой\s+прогресс|прогресс\s+адаптации|какой\s+(у\s+меня\s+)?прогресс|план\s+адаптации|на\s+каком\s+я\s+этапе|с\s+чего\s+начать|чем\s+заняться)`)
 	reTeam          = regexp.MustCompile(`(какие\s+(у\s+нас\s+)?(каналы|инструменты|правила)|наши\s+каналы|стек\s+команды|о\s+(моей\s+|нашей\s+)?команде|чем\s+занимается\s+(моя\s+|наша\s+)?команда)`)
@@ -189,10 +189,10 @@ func (t *turn) decide() Response {
 	switch {
 	case reStatusAsk.MatchString(t.low) && strings.Contains(t.low, "заявк"):
 		return t.leaveStatus()
-	case reAccess.MatchString(t.low):
-		return t.access()
 	case reTaskDone.MatchString(t.low) || reMarkDone.MatchString(t.low):
 		return t.taskDone()
+	case reAccess.MatchString(t.low):
+		return t.access()
 	case reNextSteps.MatchString(t.low):
 		return t.nextSteps()
 	case reTeam.MatchString(t.low):
@@ -644,8 +644,8 @@ func (t *turn) otherPlan(name string) Response {
 	people, ok := t.result("find_person")
 	if !ok {
 		r := []rune(name)
-		if len(r) > 4 {
-			r = r[:len(r)-1] // «Бориса» → «Борис»
+		if len(r) > 3 {
+			r = r[:len(r)-1] // «Бориса» → «Борис», «Анны» → «Анн»
 		}
 		return Response{ToolCalls: []ToolCall{t.call("find_person", map[string]any{"query": string(r)})}}
 	}

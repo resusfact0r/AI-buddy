@@ -1,0 +1,51 @@
+# Сервисы Бэкенда 2 для ОБЩЕГО docker-compose.yml в корне репозитория.
+# Скопируйте блоки mcp и agent в секцию services рядом с api, corp-mock, postgres и redis.
+# Ожидается, что сервисы Бэкенда 1 называются api (порт 8080) и redis (порт 6379)
+# и у api есть healthcheck. Если имена другие — поправьте API_BASE_URL, REDIS_URL и depends_on.
+services:
+  mcp:
+    build: ./agent
+    command: ["mcp"]
+    environment:
+      API_BASE_URL: http://api:8080
+      MCP_ADDR: ":8082"
+      TOOL_TIMEOUT_SEC: ${TOOL_TIMEOUT_SEC:-5}
+    ports:
+      - "8082:8082"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  agent:
+    build: ./agent
+    command: ["agent"]
+    environment:
+      API_BASE_URL: http://api:8080
+      MCP_URL: http://mcp:8082
+      REDIS_URL: redis://redis:6379/0
+      AGENT_ADDR: ":8081"
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-openai/gpt-4o-mini}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      TZ: ${TZ:-Europe/Moscow}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    ports:
+      - "8081:8081"
+    depends_on:
+      mcp:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
