@@ -1,0 +1,1617 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">aibuddy/backend/cmd/api/main.go (0.0%)</option>
+				
+				<option value="file1">aibuddy/backend/cmd/corp-mock/main.go (0.0%)</option>
+				
+				<option value="file2">aibuddy/backend/internal/auth/auth.go (100.0%)</option>
+				
+				<option value="file3">aibuddy/backend/internal/corpclient/client.go (90.9%)</option>
+				
+				<option value="file4">aibuddy/backend/internal/corpmock/handler.go (88.7%)</option>
+				
+				<option value="file5">aibuddy/backend/internal/domain/domain.go (50.0%)</option>
+				
+				<option value="file6">aibuddy/backend/internal/httpapi/api.go (87.8%)</option>
+				
+				<option value="file7">aibuddy/backend/internal/httpapi/cache.go (100.0%)</option>
+				
+				<option value="file8">aibuddy/backend/internal/httpapi/idempotency.go (69.2%)</option>
+				
+				<option value="file9">aibuddy/backend/internal/rbac/rbac.go (100.0%)</option>
+				
+				<option value="file10">aibuddy/backend/internal/service/service.go (89.3%)</option>
+				
+				<option value="file11">aibuddy/backend/internal/service/sync.go (85.0%)</option>
+				
+				<option value="file12">aibuddy/backend/internal/storage/seed.go (80.2%)</option>
+				
+				<option value="file13">aibuddy/backend/internal/storage/storage.go (87.8%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "aibuddy/backend/internal/corpclient"
+        "aibuddy/backend/internal/httpapi"
+        "aibuddy/backend/internal/service"
+        "aibuddy/backend/internal/storage"
+        "context"
+        "github.com/jackc/pgx/v5/pgxpool"
+        "github.com/redis/go-redis/v9"
+        "log/slog"
+        "net/http"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+)
+
+func main() <span class="cov0" title="0">{
+        slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+        if e := run(); e != nil </span><span class="cov0" title="0">{
+                slog.Error("startup failed", "error", e)
+                os.Exit(1)
+        }</span>
+}
+func run() error <span class="cov0" title="0">{
+        ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+        defer stop()
+        secret := os.Getenv("JWT_SECRET")
+        if len(secret) &lt; 32 </span><span class="cov0" title="0">{
+                return fmtError("JWT_SECRET must contain at least 32 characters")
+        }</span>
+        <span class="cov0" title="0">db, e := pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov0" title="0">defer db.Close()
+        if e = db.Ping(ctx); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov0" title="0">opt, e := redis.ParseURL(os.Getenv("REDIS_URL"))
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov0" title="0">cache := redis.NewClient(opt)
+        defer cache.Close()
+        if e = cache.Ping(ctx).Err(); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov0" title="0">store := &amp;storage.Store{DB: db}
+        if len(os.Args) == 2 &amp;&amp; os.Args[1] == "--reset-demo" </span><span class="cov0" title="0">{
+                if e = store.ResetDemo(ctx); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+                <span class="cov0" title="0">return cache.FlushDB(ctx).Err()</span>
+        }
+        <span class="cov0" title="0">if e = store.Seed(ctx); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov0" title="0">corp := &amp;corpclient.HTTP{URL: os.Getenv("CORP_MOCK_URL"), Token: os.Getenv("CORP_TOKEN"), Client: &amp;http.Client{Timeout: 2 * time.Second}}
+        svc := &amp;service.Service{Repo: store, Corp: corp, Now: time.Now}
+        api := &amp;httpapi.API{Store: store, Service: svc, Redis: cache, Secret: secret}
+        server := &amp;http.Server{Addr: ":8080", Handler: api, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+        done := make(chan error, 1)
+        go func() </span><span class="cov0" title="0">{ done &lt;- server.ListenAndServe() }</span>()
+        <span class="cov0" title="0">select </span>{
+        case e = &lt;-done:<span class="cov0" title="0">
+                if e != http.ErrServerClosed </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        case &lt;-ctx.Done():<span class="cov0" title="0">
+                shutdown, c := context.WithTimeout(context.Background(), 10*time.Second)
+                defer c()
+                return server.Shutdown(shutdown)</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+type fmtError string
+
+func (e fmtError) Error() string <span class="cov0" title="0">{ return string(e) }</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "aibuddy/backend/internal/corpmock"
+
+        "context"
+
+        "github.com/jackc/pgx/v5/pgxpool"
+        "log/slog"
+
+        "net/http"
+        "os"
+        "strconv"
+
+        "time"
+)
+
+func main() <span class="cov0" title="0">{
+        slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+        db, e := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+        if e != nil </span><span class="cov0" title="0">{
+                slog.Error("db", "error", e)
+                os.Exit(1)
+        }</span>
+        <span class="cov0" title="0">defer db.Close()
+        rate, e := strconv.ParseFloat(os.Getenv("CORP_MOCK_FAIL_RATE"), 64)
+        if e != nil || rate &lt; 0 || rate &gt; 1 </span><span class="cov0" title="0">{
+                slog.Error("invalid fail rate")
+                os.Exit(1)
+        }</span>
+        <span class="cov0" title="0">token := os.Getenv("CORP_TOKEN")
+        if token == "" </span><span class="cov0" title="0">{
+                slog.Error("CORP_TOKEN required")
+                os.Exit(1)
+        }</span>
+        <span class="cov0" title="0">h := corpmock.Handler(db, token, rate)
+        server := &amp;http.Server{Addr: ":8090", Handler: h, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second}
+        if e = server.ListenAndServe(); e != nil </span><span class="cov0" title="0">{
+                slog.Error("server", "error", e)
+                os.Exit(1)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package auth
+
+import (
+        "crypto/hmac"
+        "crypto/sha256"
+        "encoding/base64"
+        "encoding/json"
+        "errors"
+        "strings"
+        "time"
+)
+
+type Claims struct {
+        Sub string `json:"sub"`
+        Exp int64  `json:"exp"`
+}
+
+func Issue(id, secret string, now time.Time) string <span class="cov8" title="1">{
+        b, _ := json.Marshal(Claims{id, now.Add(12 * time.Hour).Unix()})
+        s := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`)) + "." + base64.RawURLEncoding.EncodeToString(b)
+        return s + "." + sign(s, secret)
+}</span>
+func sign(s, key string) string <span class="cov8" title="1">{
+        h := hmac.New(sha256.New, []byte(key))
+        h.Write([]byte(s))
+        return base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+}</span>
+func Verify(token, secret string, now time.Time) (string, error) <span class="cov8" title="1">{
+        p := strings.Split(token, ".")
+        if len(p) != 3 || !hmac.Equal([]byte(sign(strings.Join(p[:2], "."), secret)), []byte(p[2])) </span><span class="cov8" title="1">{
+                return "", errors.New("invalid token")
+        }</span>
+        <span class="cov8" title="1">head, e := base64.RawURLEncoding.DecodeString(p[0])
+        var h map[string]string
+        if e != nil || json.Unmarshal(head, &amp;h) != nil || h["alg"] != "HS256" </span><span class="cov8" title="1">{
+                return "", errors.New("invalid algorithm")
+        }</span>
+        <span class="cov8" title="1">b, e := base64.RawURLEncoding.DecodeString(p[1])
+        var c Claims
+        if e != nil || json.Unmarshal(b, &amp;c) != nil || c.Sub == "" || c.Exp &lt;= now.Unix() </span><span class="cov8" title="1">{
+                return "", errors.New("expired token")
+        }</span>
+        <span class="cov8" title="1">return c.Sub, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package corpclient
+
+import (
+        "aibuddy/backend/internal/domain"
+        "bytes"
+        "context"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+        "time"
+)
+
+type Client interface {
+        Call(context.Context, string, string, domain.Request, bool) (domain.Request, error)
+}
+type HTTP struct {
+        URL    string
+        Token  string
+        Client *http.Client
+}
+
+func (c *HTTP) Call(ctx context.Context, method, path string, in domain.Request, fail bool) (domain.Request, error) <span class="cov8" title="1">{
+        var out domain.Request
+        body, e := json.Marshal(in)
+        if e != nil </span><span class="cov0" title="0">{
+                return out, e
+        }</span>
+        <span class="cov8" title="1">var lastErr error
+        for attempt := 0; attempt &lt; 3; attempt++ </span><span class="cov8" title="1">{
+                if attempt &gt; 0 </span><span class="cov8" title="1">{
+                        select </span>{
+                        case &lt;-ctx.Done():<span class="cov8" title="1">
+                                return out, ctx.Err()</span>
+                        case &lt;-time.After(time.Duration(attempt) * 100 * time.Millisecond):<span class="cov8" title="1"></span>
+                        }
+                }
+                <span class="cov8" title="1">req, e := http.NewRequestWithContext(ctx, method, c.URL+path, bytes.NewReader(body))
+                if e != nil </span><span class="cov8" title="1">{
+                        return out, e
+                }</span>
+                <span class="cov8" title="1">req.Header.Set("Authorization", "Bearer "+c.Token)
+                req.Header.Set("Content-Type", "application/json")
+                if fail </span><span class="cov8" title="1">{
+                        req.Header.Set("X-Mock-Fail", "true")
+                }</span>
+                <span class="cov8" title="1">res, err := c.Client.Do(req)
+                if err != nil </span><span class="cov8" title="1">{
+                        lastErr = err
+                        continue</span>
+                }
+                <span class="cov8" title="1">b, err := io.ReadAll(io.LimitReader(res.Body, 1&lt;&lt;20))
+                res.Body.Close()
+                if err != nil </span><span class="cov0" title="0">{
+                        lastErr = err
+                        continue</span>
+                }
+                <span class="cov8" title="1">if res.StatusCode &gt;= 500 </span><span class="cov8" title="1">{
+                        lastErr = fmt.Errorf("upstream status %d", res.StatusCode)
+                        continue</span>
+                }
+                <span class="cov8" title="1">if res.StatusCode &gt;= 400 </span><span class="cov8" title="1">{
+                        return out, fmt.Errorf("upstream status %d", res.StatusCode)
+                }</span>
+                <span class="cov8" title="1">e = json.Unmarshal(b, &amp;out)
+                return out, e</span>
+        }
+        <span class="cov8" title="1">return out, lastErr</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package corpmock
+
+import (
+        "aibuddy/backend/internal/domain"
+        "crypto/subtle"
+        "encoding/json"
+        "github.com/jackc/pgx/v5/pgxpool"
+        "math/rand"
+        "net/http"
+        "strings"
+        "time"
+)
+
+func Handler(db *pgxpool.Pool, token string, rate float64) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                w.Header().Set("Content-Type", "application/json")
+                if r.URL.Path == "/healthz" </span><span class="cov8" title="1">{
+                        w.Write([]byte(`{"status":"ok"}`))
+                        return
+                }</span>
+                <span class="cov8" title="1">if subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+token)) != 1 </span><span class="cov8" title="1">{
+                        http.Error(w, `{"error":{"code":"unauthorized"}}`, http.StatusUnauthorized)
+                        return
+                }</span>
+                <span class="cov8" title="1">select </span>{
+                case &lt;-r.Context().Done():<span class="cov0" title="0">
+                        return</span>
+                case &lt;-time.After(time.Duration(200+rand.Intn(401)) * time.Millisecond):<span class="cov8" title="1"></span>
+                }
+                <span class="cov8" title="1">if r.Header.Get("X-Mock-Fail") == "true" || rand.Float64() &lt; rate </span><span class="cov8" title="1">{
+                        http.Error(w, `{"error":{"code":"upstream_unavailable"}}`, http.StatusServiceUnavailable)
+                        return
+                }</span>
+                <span class="cov8" title="1">parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+                if r.Method == "GET" &amp;&amp; r.URL.Path == "/access/systems" </span><span class="cov8" title="1">{
+                        json.NewEncoder(w).Encode([]string{"gitlab", "kafka", "grafana", "storybook", "sentry"})
+                        return
+                }</span>
+                <span class="cov8" title="1">if len(parts) &lt; 2 || (parts[0] != "absence" &amp;&amp; parts[0] != "access") || parts[1] != "requests" </span><span class="cov8" title="1">{
+                        http.NotFound(w, r)
+                        return
+                }</span>
+                <span class="cov8" title="1">var req domain.Request
+                var data []byte
+                switch </span>{
+                case len(parts) == 2 &amp;&amp; r.Method == "POST":<span class="cov8" title="1">
+                        if json.NewDecoder(http.MaxBytesReader(w, r.Body, 65536)).Decode(&amp;req) != nil || req.ID == "" || req.UserID == "" </span><span class="cov8" title="1">{
+                                http.Error(w, "invalid body", http.StatusBadRequest)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">req.Status = "pending"
+                        data, _ = json.Marshal(req)
+                        _, e := db.Exec(r.Context(), "INSERT INTO corp_requests VALUES($1,$2) ON CONFLICT(id) DO NOTHING", req.ID, data)
+                        if e != nil </span><span class="cov0" title="0">{
+                                http.Error(w, "storage unavailable", http.StatusServiceUnavailable)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">e = db.QueryRow(r.Context(), "SELECT data FROM corp_requests WHERE id=$1", req.ID).Scan(&amp;data)
+                        if e != nil </span><span class="cov0" title="0">{
+                                http.Error(w, "storage unavailable", http.StatusServiceUnavailable)
+                                return
+                        }</span>
+                case len(parts) == 3 &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                        if db.QueryRow(r.Context(), "SELECT data FROM corp_requests WHERE id=$1", parts[2]).Scan(&amp;data) != nil </span><span class="cov8" title="1">{
+                                http.NotFound(w, r)
+                                return
+                        }</span>
+                case len(parts) == 4 &amp;&amp; parts[3] == "decision" &amp;&amp; r.Method == "POST":<span class="cov8" title="1">
+                        if json.NewDecoder(http.MaxBytesReader(w, r.Body, 65536)).Decode(&amp;req) != nil || (req.Status != "approved" &amp;&amp; req.Status != "rejected") </span><span class="cov8" title="1">{
+                                http.Error(w, "invalid decision", http.StatusBadRequest)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">var old []byte
+                        if db.QueryRow(r.Context(), "SELECT data FROM corp_requests WHERE id=$1", parts[2]).Scan(&amp;old) != nil </span><span class="cov8" title="1">{
+                                http.NotFound(w, r)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">var existing domain.Request
+                        _ = json.Unmarshal(old, &amp;existing)
+                        if existing.Status != "pending" &amp;&amp; existing.Status != req.Status </span><span class="cov8" title="1">{
+                                http.Error(w, "already decided", http.StatusConflict)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">existing.Status = req.Status
+                        existing.DecidedBy = req.DecidedBy
+                        existing.DecisionComment = req.DecisionComment
+                        existing.UpdatedAt = time.Now()
+                        data, _ = json.Marshal(existing)
+                        if _, err := db.Exec(r.Context(), "UPDATE corp_requests SET data=$2 WHERE id=$1", parts[2], data); err != nil </span><span class="cov0" title="0">{
+                                http.Error(w, "storage unavailable", http.StatusServiceUnavailable)
+                                return
+                        }</span>
+                default:<span class="cov8" title="1">
+                        http.NotFound(w, r)
+                        return</span>
+                }
+                <span class="cov8" title="1">w.Write(data)</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package domain
+
+import "time"
+
+type User struct {
+        ID           string `json:"id"`
+        Login        string `json:"login"`
+        PasswordHash string `json:"-"`
+        FullName     string `json:"full_name"`
+        Role         string `json:"role"`
+        TeamID       string `json:"team_id"`
+        BuddyID      string `json:"buddy_id"`
+        LeadID       string `json:"lead_id"`
+        StartDate    string `json:"start_date"`
+}
+type Resource struct{ UserID, TeamID, BuddyID string }
+type Tool struct {
+        Code     string `json:"system_code"`
+        Title    string `json:"title"`
+        Purpose  string `json:"purpose"`
+        Required bool   `json:"required"`
+}
+type Team struct {
+        ID          string `json:"id"`
+        Name        string `json:"name"`
+        Description string `json:"description"`
+        Rules       string `json:"rules"`
+        Standup     string `json:"standup"`
+        DocsURL     string `json:"docs_url"`
+        Tools       []Tool `json:"tools"`
+        IsTestData  bool   `json:"is_test_data"`
+}
+type Task struct {
+        ID          string `json:"id"`
+        StageID     string `json:"stage_id"`
+        Code        string `json:"code"`
+        Title       string `json:"title"`
+        Description string `json:"description"`
+        Link        string `json:"link"`
+        Required    bool   `json:"required"`
+        TeamID      string `json:"team_id,omitempty"`
+        Status      string `json:"status"`
+        Comment     string `json:"comment"`
+}
+type Stage struct {
+        ID    string `json:"id"`
+        Ord   int    `json:"ord"`
+        Title string `json:"title"`
+        Tasks []Task `json:"tasks"`
+}
+type Request struct {
+        ID              string            `json:"id"`
+        UserID          string            `json:"user_id"`
+        Type            string            `json:"type"`
+        Payload         map[string]string `json:"payload"`
+        Status          string            `json:"status"`
+        ExternalID      string            `json:"external_id"`
+        DecidedBy       string            `json:"decided_by,omitempty"`
+        DecisionComment string            `json:"decision_comment,omitempty"`
+        CreatedAt       time.Time         `json:"created_at"`
+        UpdatedAt       time.Time         `json:"updated_at"`
+}
+type Article struct {
+        ID         string   `json:"id"`
+        Title      string   `json:"title"`
+        Body       string   `json:"body"`
+        Tags       []string `json:"tags"`
+        TeamID     string   `json:"team_id,omitempty"`
+        IsTestData bool     `json:"is_test_data"`
+}
+type Error struct {
+        Status  int    `json:"-"`
+        Code    string `json:"code"`
+        Message string `json:"message"`
+        Details any    `json:"details,omitempty"`
+}
+
+func (e *Error) Error() string <span class="cov0" title="0">{ return e.Message }</span>
+func Err(status int, code, message string) *Error <span class="cov8" title="1">{
+        return &amp;Error{Status: status, Code: code, Message: message}
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package httpapi
+
+import (
+        "aibuddy/backend/internal/auth"
+        "aibuddy/backend/internal/domain"
+        "aibuddy/backend/internal/rbac"
+        "aibuddy/backend/internal/service"
+        "aibuddy/backend/internal/storage"
+        "context"
+        "crypto/sha256"
+        "encoding/json"
+        "errors"
+        "fmt"
+        "github.com/jackc/pgx/v5"
+        "github.com/redis/go-redis/v9"
+        "golang.org/x/crypto/bcrypt"
+        "io"
+        "log/slog"
+        "net/http"
+        "strconv"
+        "strings"
+        "time"
+)
+
+type API struct {
+        Store   *storage.Store
+        Service *service.Service
+        Redis   *redis.Client
+        Secret  string
+}
+
+func write(w http.ResponseWriter, status int, v any) <span class="cov8" title="1">{
+        w.Header().Set("Content-Type", "application/json; charset=utf-8")
+        w.WriteHeader(status)
+        _ = json.NewEncoder(w).Encode(v)
+}</span>
+func failure(w http.ResponseWriter, e error) <span class="cov8" title="1">{
+        var de *domain.Error
+        if !errors.As(e, &amp;de) </span><span class="cov8" title="1">{
+                slog.Error("request failed", "error", e)
+                de = domain.Err(500, "internal_error", "Внутренняя ошибка")
+        }</span>
+        <span class="cov8" title="1">write(w, de.Status, map[string]any{"error": de})</span>
+}
+func decode(r *http.Request, v any) error <span class="cov8" title="1">{
+        d := json.NewDecoder(io.LimitReader(r.Body, 65537))
+        d.DisallowUnknownFields()
+        if e := d.Decode(v); e != nil </span><span class="cov8" title="1">{
+                return domain.Err(400, "validation_error", "Некорректный JSON")
+        }</span>
+        <span class="cov8" title="1">if d.Decode(new(any)) != io.EOF </span><span class="cov8" title="1">{
+                return domain.Err(400, "validation_error", "Ожидается один JSON объект")
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id := service.ID()
+        w.Header().Set("X-Request-ID", id)
+        start := time.Now()
+        uid := ""
+        defer func() </span><span class="cov8" title="1">{
+                slog.Info("request", "request_id", id, "user_id", uid, "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(start).Milliseconds())
+        }</span>()
+        <span class="cov8" title="1">ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+        defer cancel()
+        r = r.WithContext(ctx)
+        path := strings.TrimPrefix(r.URL.Path, "/api/v1")
+        if r.Method == "GET" &amp;&amp; (path == "/healthz" || path == "/readyz") </span><span class="cov8" title="1">{
+                if path == "/readyz" </span><span class="cov8" title="1">{
+                        if e := a.Store.DB.Ping(ctx); e != nil </span><span class="cov0" title="0">{
+                                failure(w, domain.Err(503, "unavailable", "База недоступна"))
+                                return
+                        }</span>
+                        <span class="cov8" title="1">if e := a.Redis.Ping(ctx).Err(); e != nil </span><span class="cov0" title="0">{
+                                failure(w, domain.Err(503, "unavailable", "Redis недоступен"))
+                                return
+                        }</span>
+                }
+                <span class="cov8" title="1">write(w, 200, map[string]string{"status": "ok"})
+                return</span>
+        }
+        <span class="cov8" title="1">if r.URL.Path == "/api/v1/auth/login" &amp;&amp; r.Method == "POST" </span><span class="cov8" title="1">{
+                a.login(w, r)
+                return
+        }</span>
+        <span class="cov8" title="1">token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+        var e error
+        uid, e = auth.Verify(token, a.Secret, time.Now())
+        if e != nil </span><span class="cov8" title="1">{
+                failure(w, domain.Err(401, "unauthorized", "Требуется авторизация"))
+                return
+        }</span>
+        <span class="cov8" title="1">u, e := a.Store.User(ctx, uid)
+        if e != nil </span><span class="cov0" title="0">{
+                failure(w, domain.Err(401, "unauthorized", "Неизвестный пользователь"))
+                return
+        }</span>
+        <span class="cov8" title="1">if !strings.HasPrefix(r.URL.Path, "/api/v1/") </span><span class="cov0" title="0">{
+                failure(w, domain.Err(404, "not_found", "Маршрут не найден"))
+                return
+        }</span>
+        // A database advisory lock serializes mutations across API replicas and keeps validation atomic.
+        <span class="cov8" title="1">if r.Method != "GET" || strings.HasPrefix(path, "/requests/") </span><span class="cov8" title="1">{
+                conn, err := a.Store.DB.Acquire(ctx)
+                if err != nil </span><span class="cov0" title="0">{
+                        failure(w, err)
+                        return
+                }</span>
+                <span class="cov8" title="1">defer conn.Release()
+                var locked bool
+                if err = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock(814422)").Scan(&amp;locked); err != nil </span><span class="cov0" title="0">{
+                        failure(w, err)
+                        return
+                }</span>
+                <span class="cov8" title="1">if !locked </span><span class="cov0" title="0">{
+                        failure(w, domain.Err(409, "conflict", "Another mutation is in progress; retry with the same key"))
+                        return
+                }</span>
+                <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                        unlock, c := context.WithTimeout(context.Background(), 2*time.Second)
+                        defer c()
+                        _, _ = conn.Exec(unlock, "SELECT pg_advisory_unlock(814422)")
+                }</span>()
+        }
+        <span class="cov8" title="1">var out any
+        status := 200
+        switch </span>{
+        case path == "/auth/me" &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                out = u</span>
+        case path == "/me/profile" &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                var t domain.Team
+                e = a.Store.Get(ctx, "teams", u.TeamID, &amp;t)
+                buddy, _ := a.Store.User(ctx, u.BuddyID)
+                lead, _ := a.Store.User(ctx, u.LeadID)
+                out = map[string]any{"user": u, "team": t, "buddy": buddy, "lead": lead, "is_test_data": true}</span>
+        case strings.HasPrefix(path, "/teams/") &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                tid := strings.TrimPrefix(path, "/teams/")
+                if !rbac.Can(u, "team", domain.Resource{TeamID: tid}) </span><span class="cov8" title="1">{
+                        e = domain.Err(403, "forbidden", "Нет доступа к команде")
+                        break</span>
+                }
+                <span class="cov8" title="1">var t domain.Team
+                if !a.cached(ctx, "team:"+tid, &amp;t) </span><span class="cov8" title="1">{
+                        e = a.Store.Get(ctx, "teams", tid, &amp;t)
+                        if e == nil </span><span class="cov8" title="1">{
+                                a.cache(ctx, "team:"+tid, t)
+                        }</span>
+                }
+                <span class="cov8" title="1">out = t</span>
+        case strings.HasPrefix(path, "/onboarding/") &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                var p []domain.Stage
+                target := r.URL.Query().Get("user_id")
+                if target == "" </span><span class="cov8" title="1">{
+                        target = u.ID
+                }</span>
+                <span class="cov8" title="1">owner, err := a.Store.User(ctx, target)
+                if err != nil </span><span class="cov0" title="0">{
+                        e = domain.Err(404, "not_found", "Пользователь не найден")
+                        break</span>
+                }
+                <span class="cov8" title="1">if !rbac.Can(u, "plan", service.Resource(owner)) </span><span class="cov8" title="1">{
+                        e = domain.Err(403, "forbidden", "Нет доступа к плану")
+                        break</span>
+                }
+                <span class="cov8" title="1">var version string
+                e = a.Store.DB.QueryRow(ctx, "SELECT md5(data::text) FROM user_plans_api WHERE user_id=$1", target).Scan(&amp;version)
+                if e != nil </span><span class="cov0" title="0">{
+                        break</span>
+                }
+                <span class="cov8" title="1">key := "plan:" + target + ":" + version
+                if !a.cached(ctx, key, &amp;p) </span><span class="cov8" title="1">{
+                        p, e = a.Service.Plan(ctx, u, target)
+                        if e == nil </span><span class="cov8" title="1">{
+                                a.cache(ctx, key, p)
+                        }</span>
+                }
+                <span class="cov8" title="1">if e != nil </span><span class="cov0" title="0">{
+                        break</span>
+                }
+                <span class="cov8" title="1">switch path </span>{
+                case "/onboarding/plan":<span class="cov8" title="1">
+                        out = map[string]any{"stages": p, "is_test_data": true}</span>
+                case "/onboarding/progress":<span class="cov8" title="1">
+                        out = service.Progress(p)</span>
+                case "/onboarding/next-steps":<span class="cov8" title="1">
+                        out = map[string]any{"tasks": service.Progress(p)["next_steps"]}</span>
+                default:<span class="cov8" title="1">
+                        e = domain.Err(404, "not_found", "Маршрут не найден")</span>
+                }
+        case strings.HasPrefix(path, "/onboarding/tasks/") &amp;&amp; r.Method == "PATCH":<span class="cov8" title="1">
+                var b struct {
+                        Status  string `json:"status"`
+                        Comment string `json:"comment"`
+                }
+                e = decode(r, &amp;b)
+                if e == nil </span><span class="cov8" title="1">{
+                        e = a.Service.Task(ctx, u, strings.TrimPrefix(path, "/onboarding/tasks/"), b.Status, b.Comment)
+                }</span>
+                <span class="cov8" title="1">out = map[string]bool{"updated": true}</span>
+        case path == "/access/overview" &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                out, e = a.Service.Overview(ctx, u)</span>
+        case (path == "/requests/leave" || path == "/requests/access") &amp;&amp; r.Method == "POST":<span class="cov8" title="1">
+                a.create(w, r, u, strings.TrimPrefix(path, "/requests/"))
+                return</span>
+        case (path == "/requests" || path == "/approvals/pending") &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                if path == "/approvals/pending" &amp;&amp; !rbac.Can(u, "pending", service.Resource(u)) </span><span class="cov8" title="1">{
+                        e = domain.Err(403, "forbidden", "Только руководитель")
+                        break</span>
+                }
+                <span class="cov8" title="1">var list []domain.Request
+                list, e = a.Service.Visible(ctx, u)
+                filtered := []domain.Request{}
+                for _, v := range list </span><span class="cov8" title="1">{
+                        if path == "/approvals/pending" &amp;&amp; (v.Status != "pending" || v.UserID == u.ID) </span><span class="cov8" title="1">{
+                                continue</span>
+                        }
+                        <span class="cov8" title="1">if q := r.URL.Query().Get("type"); q != "" &amp;&amp; v.Type != q </span><span class="cov8" title="1">{
+                                continue</span>
+                        }
+                        <span class="cov8" title="1">if q := r.URL.Query().Get("status"); q != "" &amp;&amp; v.Status != q </span><span class="cov8" title="1">{
+                                continue</span>
+                        }
+                        <span class="cov8" title="1">filtered = append(filtered, v)</span>
+                }
+                <span class="cov8" title="1">out = filtered</span>
+        case strings.HasPrefix(path, "/requests/"):<span class="cov8" title="1">
+                parts := strings.Split(strings.TrimPrefix(path, "/requests/"), "/")
+                if len(parts) == 1 &amp;&amp; r.Method == "GET" </span><span class="cov8" title="1">{
+                        out, e = a.Service.Sync(ctx, u, parts[0])
+                }</span> else<span class="cov8" title="1"> if len(parts) == 2 &amp;&amp; r.Method == "POST" &amp;&amp; (parts[1] == "approve" || parts[1] == "reject") </span><span class="cov8" title="1">{
+                        var b struct {
+                                Comment string `json:"comment"`
+                        }
+                        e = decode(r, &amp;b)
+                        if e == nil </span><span class="cov8" title="1">{
+                                decision := "approved"
+                                if parts[1] == "reject" </span><span class="cov8" title="1">{
+                                        decision = "rejected"
+                                }</span>
+                                <span class="cov8" title="1">out, e = a.Service.Decision(ctx, u, parts[0], decision, b.Comment, r.Header.Get("X-Mock-Fail") == "true")</span>
+                        }
+                } else<span class="cov8" title="1"> {
+                        e = domain.Err(404, "not_found", "Маршрут не найден")
+                }</span>
+        case path == "/knowledge/search" &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                out, e = a.search(r, u)</span>
+        case strings.HasPrefix(path, "/knowledge/") &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                var v domain.Article
+                e = a.Store.Get(ctx, "knowledge_articles", strings.TrimPrefix(path, "/knowledge/"), &amp;v)
+                if e != nil </span><span class="cov8" title="1">{
+                        e = domain.Err(404, "not_found", "Статья не найдена")
+                }</span> else<span class="cov8" title="1"> if !rbac.Can(u, "knowledge", domain.Resource{TeamID: v.TeamID}) </span><span class="cov8" title="1">{
+                        e = domain.Err(403, "forbidden", "Нет доступа к статье")
+                }</span>
+                <span class="cov8" title="1">out = v</span>
+        case path == "/events" &amp;&amp; r.Method == "POST":<span class="cov8" title="1">
+                var b struct {
+                        Type    string         `json:"type"`
+                        Payload map[string]any `json:"payload"`
+                }
+                e = decode(r, &amp;b)
+                if e == nil &amp;&amp; strings.TrimSpace(b.Type) == "" </span><span class="cov8" title="1">{
+                        e = domain.Err(400, "validation_error", "Нужен type")
+                }</span>
+                <span class="cov8" title="1">if e == nil </span><span class="cov8" title="1">{
+                        data, _ := json.Marshal(b)
+                        _, e = a.Store.DB.Exec(ctx, "INSERT INTO events(user_id,data) VALUES($1,$2)", u.ID, data)
+                }</span>
+                <span class="cov8" title="1">status = 201
+                out = map[string]bool{"saved": true}</span>
+        case path == "/chat/messages" &amp;&amp; r.Method == "POST":<span class="cov8" title="1">
+                var b struct {
+                        ConversationID string         `json:"conversation_id"`
+                        Role           string         `json:"role"`
+                        Content        string         `json:"content"`
+                        Meta           map[string]any `json:"meta"`
+                }
+                e = decode(r, &amp;b)
+                if e == nil &amp;&amp; (b.ConversationID == "" || len(b.Content) &gt; 16000 || (b.Role != "user" &amp;&amp; b.Role != "assistant" &amp;&amp; b.Role != "tool")) </span><span class="cov8" title="1">{
+                        e = domain.Err(400, "validation_error", "Некорректное сообщение")
+                }</span>
+                <span class="cov8" title="1">var messageID int64
+                if e == nil </span><span class="cov8" title="1">{
+                        data, _ := json.Marshal(b)
+                        e = a.Store.DB.QueryRow(ctx, "INSERT INTO chat_messages(user_id,conversation_id,data) VALUES($1,$2,$3) RETURNING id", u.ID, b.ConversationID, data).Scan(&amp;messageID)
+                }</span>
+                <span class="cov8" title="1">out = map[string]any{"id": messageID}
+                status = 201</span>
+        case path == "/chat/history" &amp;&amp; r.Method == "GET":<span class="cov8" title="1">
+                out, e = a.history(r, u)</span>
+        default:<span class="cov8" title="1">
+                e = domain.Err(404, "not_found", "Маршрут не найден")</span>
+        }
+        <span class="cov8" title="1">if e != nil </span><span class="cov8" title="1">{
+                failure(w, e)
+                return
+        }</span>
+        <span class="cov8" title="1">write(w, status, out)</span>
+}
+func (a *API) login(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var b struct {
+                Login    string `json:"login"`
+                Password string `json:"password"`
+        }
+        if e := decode(r, &amp;b); e != nil </span><span class="cov8" title="1">{
+                failure(w, e)
+                return
+        }</span>
+        <span class="cov8" title="1">key := fmt.Sprintf("login:%x", sha256.Sum256([]byte(b.Login)))
+        n, e := a.Redis.Eval(r.Context(), `local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],60) end; return n`, []string{key}).Int()
+        if e != nil </span><span class="cov0" title="0">{
+                failure(w, domain.Err(503, "unavailable", "Redis недоступен"))
+                return
+        }</span>
+        <span class="cov8" title="1">if n &gt; 10 </span><span class="cov8" title="1">{
+                failure(w, domain.Err(429, "rate_limited", "Слишком много попыток"))
+                return
+        }</span>
+        <span class="cov8" title="1">var id string
+        e = a.Store.DB.QueryRow(r.Context(), "SELECT id FROM users WHERE login=$1", b.Login).Scan(&amp;id)
+        u, err := a.Store.User(r.Context(), id)
+        if e != nil || err != nil || bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(b.Password)) != nil </span><span class="cov8" title="1">{
+                failure(w, domain.Err(401, "unauthorized", "Неверные учётные данные"))
+                return
+        }</span>
+        <span class="cov8" title="1">write(w, 200, map[string]any{"access_token": auth.Issue(u.ID, a.Secret, time.Now()), "user": u})</span>
+}
+func (a *API) create(w http.ResponseWriter, r *http.Request, u domain.User, kind string) <span class="cov8" title="1">{
+        key := r.Header.Get("Idempotency-Key")
+        if key == "" || len(key) &gt; 200 </span><span class="cov8" title="1">{
+                failure(w, domain.Err(400, "validation_error", "Нужен Idempotency-Key до 200 символов"))
+                return
+        }</span>
+        <span class="cov8" title="1">var p map[string]string
+        if e := decode(r, &amp;p); e != nil </span><span class="cov8" title="1">{
+                failure(w, e)
+                return
+        }</span>
+        <span class="cov8" title="1">body, _ := json.Marshal(p)
+        hash := fmt.Sprintf("%x", sha256.Sum256(append([]byte(kind), body...)))
+        redisKey := "idem:" + u.ID + ":" + key
+        var cached struct {
+                Hash     string          `json:"hash"`
+                Response json.RawMessage `json:"response"`
+        }
+        if a.cached(r.Context(), redisKey, &amp;cached) &amp;&amp; cached.Hash != "" </span><span class="cov8" title="1">{
+                if cached.Hash != hash </span><span class="cov8" title="1">{
+                        failure(w, domain.Err(409, "conflict", "Idempotency key has a different payload"))
+                        return
+                }</span>
+                <span class="cov8" title="1">write(w, 200, cached.Response)
+                return</span>
+        }
+        <span class="cov8" title="1">var oldhash string
+        var response []byte
+        e := a.Store.DB.QueryRow(r.Context(), "SELECT body_hash,response FROM idempotency WHERE user_id=$1 AND key=$2 AND created_at&gt;now()-interval '24 hours'", u.ID, key).Scan(&amp;oldhash, &amp;response)
+        if e == nil </span><span class="cov0" title="0">{
+                if oldhash != hash </span><span class="cov0" title="0">{
+                        failure(w, domain.Err(409, "conflict", "Ключ уже использован с другим телом"))
+                        return
+                }</span>
+                <span class="cov0" title="0">var v any
+                _ = json.Unmarshal(response, &amp;v)
+                write(w, 200, v)
+                return</span>
+        }
+        <span class="cov8" title="1">if !errors.Is(e, pgx.ErrNoRows) </span><span class="cov0" title="0">{
+                failure(w, e)
+                return
+        }</span>
+        <span class="cov8" title="1">svc := *a.Service
+        svc.RequestID = fmt.Sprintf("%x", sha256.Sum256([]byte(u.ID+":"+key+":"+hash)))
+        svc.Repo = &amp;idemRepository{Store: a.Store, key: key, hash: hash}
+        req, e := svc.Create(r.Context(), u, kind, p, r.Header.Get("X-Mock-Fail") == "true")
+        if e != nil </span><span class="cov8" title="1">{
+                failure(w, e)
+                return
+        }</span>
+        <span class="cov8" title="1">response, _ = json.Marshal(req)
+        cached.Hash = hash
+        cached.Response = response
+        encoded, _ := json.Marshal(cached)
+        _ = a.Redis.Set(r.Context(), redisKey, encoded, 24*time.Hour).Err()
+        write(w, 201, req)</span>
+}
+func limit(r *http.Request, def int) int <span class="cov8" title="1">{
+        n, e := strconv.Atoi(r.URL.Query().Get("limit"))
+        if e != nil || n &lt; 1 </span><span class="cov8" title="1">{
+                return def
+        }</span>
+        <span class="cov8" title="1">if n &gt; 100 </span><span class="cov8" title="1">{
+                return 100
+        }</span>
+        <span class="cov0" title="0">return n</span>
+}
+func (a *API) search(r *http.Request, u domain.User) (any, error) <span class="cov8" title="1">{
+        q := r.URL.Query().Get("query")
+        if strings.TrimSpace(q) == "" </span><span class="cov8" title="1">{
+                return nil, domain.Err(400, "validation_error", "Нужен query")
+        }</span>
+        <span class="cov8" title="1">rows, e := a.Store.DB.Query(r.Context(), `SELECT id,title,ts_headline('russian',body,plainto_tsquery('russian',$1)),team_id,ts_rank(tsv,plainto_tsquery('russian',$1)) FROM knowledge_articles WHERE (team_id IS NULL OR team_id=$2) AND tsv @@ plainto_tsquery('russian',$1) ORDER BY 5 DESC,id LIMIT $3`, q, u.TeamID, limit(r, 5))
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        out := []map[string]any{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                var id, title, snippet string
+                var team *string
+                var rank float32
+                if e = rows.Scan(&amp;id, &amp;title, &amp;snippet, &amp;team, &amp;rank); e != nil </span><span class="cov0" title="0">{
+                        return nil, e
+                }</span>
+                <span class="cov8" title="1">out = append(out, map[string]any{"id": id, "title": title, "snippet": snippet, "team_id": team, "rank": rank, "is_test_data": true})</span>
+        }
+        <span class="cov8" title="1">return out, rows.Err()</span>
+}
+func (a *API) history(r *http.Request, u domain.User) (any, error) <span class="cov8" title="1">{
+        rows, e := a.Store.DB.Query(r.Context(), "SELECT data FROM (SELECT id,data FROM chat_messages WHERE user_id=$1 AND conversation_id=$2 ORDER BY id DESC LIMIT $3) t ORDER BY id", u.ID, r.URL.Query().Get("conversation_id"), limit(r, 20))
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        out := []json.RawMessage{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                var b []byte
+                if e = rows.Scan(&amp;b); e != nil </span><span class="cov0" title="0">{
+                        return nil, e
+                }</span>
+                <span class="cov8" title="1">out = append(out, json.RawMessage(b))</span>
+        }
+        <span class="cov8" title="1">return out, rows.Err()</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package httpapi
+
+import (
+        "context"
+        "encoding/json"
+        "time"
+)
+
+func (a *API) cached(ctx context.Context, key string, out any) bool <span class="cov8" title="1">{
+        b, e := a.Redis.Get(ctx, key).Bytes()
+        return e == nil &amp;&amp; json.Unmarshal(b, out) == nil
+}</span>
+func (a *API) cache(ctx context.Context, key string, value any) <span class="cov8" title="1">{
+        b, e := json.Marshal(value)
+        if e == nil </span><span class="cov8" title="1">{
+                _ = a.Redis.Set(ctx, key, b, 30*time.Second).Err()
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package httpapi
+
+import (
+        "aibuddy/backend/internal/domain"
+        "aibuddy/backend/internal/storage"
+        "context"
+        "encoding/json"
+)
+
+// Persist the successful result and its idempotency record in one transaction.
+type idemRepository struct {
+        *storage.Store
+        key, hash string
+}
+
+func (s *idemRepository) SaveRequest(ctx context.Context, r domain.Request) error <span class="cov8" title="1">{
+        tx, e := s.DB.Begin(ctx)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback(ctx)
+        b, e := json.Marshal(r)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">if _, e = tx.Exec(ctx, "SELECT save_requests($1)", b); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">if r.Status != "failed" </span><span class="cov8" title="1">{
+                if _, e = tx.Exec(ctx, "INSERT INTO idempotency(user_id,key,body_hash,response) VALUES($1,$2,$3,$4) ON CONFLICT(user_id,key) DO UPDATE SET body_hash=excluded.body_hash,response=excluded.response,created_at=now()", r.UserID, s.key, s.hash, b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        }
+        <span class="cov8" title="1">return tx.Commit(ctx)</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package rbac
+
+import "aibuddy/backend/internal/domain"
+
+func Can(u domain.User, action string, r domain.Resource) bool <span class="cov8" title="1">{
+        switch action </span>{
+        case "profile", "create", "chat", "events":<span class="cov8" title="1">
+                return u.ID != "" &amp;&amp; r.UserID == u.ID</span>
+        case "team", "knowledge":<span class="cov8" title="1">
+                return u.ID != "" &amp;&amp; (r.TeamID == "" || u.TeamID == r.TeamID)</span>
+        case "plan":<span class="cov8" title="1">
+                return u.ID == r.UserID || u.Role == "buddy" &amp;&amp; r.BuddyID == u.ID || u.Role == "lead" &amp;&amp; u.TeamID == r.TeamID</span>
+        case "task":<span class="cov8" title="1">
+                return u.Role == "intern" &amp;&amp; u.ID == r.UserID</span>
+        case "request":<span class="cov8" title="1">
+                return u.ID == r.UserID || u.Role == "lead" &amp;&amp; u.TeamID == r.TeamID</span>
+        case "approve":<span class="cov8" title="1">
+                return u.Role == "lead" &amp;&amp; u.TeamID == r.TeamID &amp;&amp; u.ID != r.UserID</span>
+        case "pending":<span class="cov8" title="1">
+                return u.Role == "lead" &amp;&amp; u.TeamID == r.TeamID</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "aibuddy/backend/internal/corpclient"
+        "aibuddy/backend/internal/domain"
+        "aibuddy/backend/internal/rbac"
+        "context"
+        "crypto/rand"
+        "encoding/hex"
+        "strings"
+        "time"
+)
+
+type Repository interface {
+        User(context.Context, string) (domain.User, error)
+        Requests(context.Context) ([]domain.Request, error)
+        SaveRequest(context.Context, domain.Request) error
+        Plan(context.Context, string) ([]domain.Stage, error)
+        SavePlan(context.Context, string, []domain.Stage) error
+        Get(context.Context, string, string, any) error
+}
+type Service struct {
+        RequestID string
+        Repo      Repository
+        Corp      corpclient.Client
+        Now       func() time.Time
+}
+
+func ID() string <span class="cov8" title="1">{
+        b := make([]byte, 16)
+        if _, e := rand.Read(b); e != nil </span><span class="cov0" title="0">{
+                panic(e)</span>
+        }
+        <span class="cov8" title="1">return hex.EncodeToString(b)</span>
+}
+func Resource(u domain.User) domain.Resource <span class="cov8" title="1">{
+        return domain.Resource{UserID: u.ID, TeamID: u.TeamID, BuddyID: u.BuddyID}
+}</span>
+func ValidateLeave(p map[string]string, now time.Time, existing []domain.Request) error <span class="cov8" title="1">{
+        from, e := time.Parse("2006-01-02", p["date_from"])
+        to, e2 := time.Parse("2006-01-02", p["date_to"])
+        today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+        if e != nil || e2 != nil || !from.After(today) || to.Before(from) || to.Sub(from) &gt; 13*24*time.Hour || (p["reason_type"] != "day_off" &amp;&amp; p["reason_type"] != "vacation") </span><span class="cov8" title="1">{
+                return domain.Err(400, "validation_error", "Укажите будущие даты, период до 14 дней и корректный reason_type")
+        }</span>
+        <span class="cov8" title="1">for _, r := range existing </span><span class="cov8" title="1">{
+                if r.Type == "leave" &amp;&amp; (r.Status == "pending" || r.Status == "approved") &amp;&amp; p["date_from"] &lt;= r.Payload["date_to"] &amp;&amp; p["date_to"] &gt;= r.Payload["date_from"] </span><span class="cov8" title="1">{
+                        return domain.Err(409, "conflict", "Период пересекается с активной заявкой")
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+func (s *Service) Visible(ctx context.Context, u domain.User) ([]domain.Request, error) <span class="cov8" title="1">{
+        all, e := s.Repo.Requests(ctx)
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">out := []domain.Request{}
+        for _, r := range all </span><span class="cov8" title="1">{
+                owner, e := s.Repo.User(ctx, r.UserID)
+                if e != nil </span><span class="cov0" title="0">{
+                        return nil, e
+                }</span>
+                <span class="cov8" title="1">if rbac.Can(u, "request", Resource(owner)) </span><span class="cov8" title="1">{
+                        out = append(out, r)
+                }</span>
+        }
+        <span class="cov8" title="1">return out, nil</span>
+}
+func (s *Service) Overview(ctx context.Context, u domain.User) ([]map[string]any, error) <span class="cov8" title="1">{
+        var team domain.Team
+        if e := s.Repo.Get(ctx, "teams", u.TeamID, &amp;team); e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">all, e := s.Repo.Requests(ctx)
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">out := []map[string]any{}
+        for _, t := range team.Tools </span><span class="cov8" title="1">{
+                status, id := "missing", ""
+                for _, r := range all </span><span class="cov8" title="1">{
+                        if r.UserID != u.ID || r.Type != "access" || r.Payload["system_code"] != t.Code </span><span class="cov8" title="1">{
+                                continue</span>
+                        }
+                        <span class="cov8" title="1">if r.Status == "approved" </span><span class="cov8" title="1">{
+                                status, id = "granted", r.ID
+                        }</span> else<span class="cov8" title="1"> if r.Status == "pending" &amp;&amp; status != "granted" </span><span class="cov8" title="1">{
+                                status, id = "requested", r.ID
+                        }</span>
+                }
+                <span class="cov8" title="1">out = append(out, map[string]any{"system_code": t.Code, "title": t.Title, "purpose": t.Purpose, "required": t.Required, "status": status, "request_id": id})</span>
+        }
+        <span class="cov8" title="1">return out, nil</span>
+}
+func (s *Service) Create(ctx context.Context, u domain.User, kind string, p map[string]string, fail bool) (domain.Request, error) <span class="cov8" title="1">{
+        var r domain.Request
+        if len(p["comment"]) &gt; 2000 || len(p["reason"]) &gt; 2000 </span><span class="cov0" title="0">{
+                return r, domain.Err(400, "validation_error", "Слишком длинный текст")
+        }</span>
+        <span class="cov8" title="1">if kind == "leave" </span><span class="cov8" title="1">{
+                all, e := s.Visible(ctx, u)
+                if e != nil </span><span class="cov0" title="0">{
+                        return r, e
+                }</span>
+                <span class="cov8" title="1">own := []domain.Request{}
+                for _, x := range all </span><span class="cov8" title="1">{
+                        if x.UserID == u.ID </span><span class="cov8" title="1">{
+                                own = append(own, x)
+                        }</span>
+                }
+                <span class="cov8" title="1">if e = ValidateLeave(p, s.Now(), own); e != nil </span><span class="cov0" title="0">{
+                        return r, e
+                }</span>
+        } else<span class="cov8" title="1"> {
+                items, e := s.Overview(ctx, u)
+                if e != nil </span><span class="cov0" title="0">{
+                        return r, e
+                }</span>
+                <span class="cov8" title="1">found := false
+                for _, t := range items </span><span class="cov8" title="1">{
+                        if t["system_code"] == p["system_code"] </span><span class="cov8" title="1">{
+                                found = true
+                                if t["status"] != "missing" </span><span class="cov8" title="1">{
+                                        return r, domain.Err(409, "conflict", "Доступ уже выдан или запрошен")
+                                }</span>
+                        }
+                }
+                <span class="cov8" title="1">if !found || strings.TrimSpace(p["reason"]) == "" </span><span class="cov8" title="1">{
+                        return r, domain.Err(400, "validation_error", "Нужна система вашей команды и причина")
+                }</span>
+        }
+        <span class="cov8" title="1">r = domain.Request{ID: ID(), UserID: u.ID, Type: kind, Payload: p, Status: "pending", CreatedAt: s.Now(), UpdatedAt: s.Now()}
+        if s.RequestID != "" </span><span class="cov8" title="1">{
+                r.ID = s.RequestID
+        }</span>
+        <span class="cov8" title="1">external, e := s.Corp.Call(ctx, "POST", corpPath(kind), r, fail)
+        if e != nil </span><span class="cov8" title="1">{
+                r.Status = "failed"
+        }</span> else<span class="cov8" title="1"> {
+                r.ExternalID = external.ID
+        }</span>
+        <span class="cov8" title="1">if err := s.Repo.SaveRequest(ctx, r); err != nil </span><span class="cov0" title="0">{
+                return r, err
+        }</span>
+        <span class="cov8" title="1">if e != nil </span><span class="cov8" title="1">{
+                return r, &amp;domain.Error{Status: 503, Code: "upstream_unavailable", Message: "Корпоративный сервис недоступен", Details: map[string]any{"retryable": true, "request_id": r.ID}}
+        }</span>
+        <span class="cov8" title="1">return r, nil</span>
+}
+func corpPath(kind string) string <span class="cov8" title="1">{
+        if kind == "leave" </span><span class="cov8" title="1">{
+                return "/absence/requests"
+        }</span>
+        <span class="cov8" title="1">return "/access/requests"</span>
+}
+func (s *Service) Request(ctx context.Context, u domain.User, id string) (domain.Request, error) <span class="cov8" title="1">{
+        var r domain.Request
+        if e := s.Repo.Get(ctx, "requests", id, &amp;r); e != nil </span><span class="cov8" title="1">{
+                return r, domain.Err(404, "not_found", "Заявка не найдена")
+        }</span>
+        <span class="cov8" title="1">owner, e := s.Repo.User(ctx, r.UserID)
+        if e != nil </span><span class="cov0" title="0">{
+                return r, e
+        }</span>
+        <span class="cov8" title="1">if !rbac.Can(u, "request", Resource(owner)) </span><span class="cov8" title="1">{
+                return domain.Request{}, domain.Err(403, "forbidden", "Нет доступа к заявке")
+        }</span>
+        <span class="cov8" title="1">return r, nil</span>
+}
+func (s *Service) Decision(ctx context.Context, u domain.User, id, status, comment string, fail bool) (domain.Request, error) <span class="cov8" title="1">{
+        r, e := s.Request(ctx, u, id)
+        if e != nil </span><span class="cov8" title="1">{
+                return r, e
+        }</span>
+        <span class="cov8" title="1">owner, e := s.Repo.User(ctx, r.UserID)
+        if e != nil </span><span class="cov0" title="0">{
+                return r, e
+        }</span>
+        <span class="cov8" title="1">if !rbac.Can(u, "approve", Resource(owner)) </span><span class="cov8" title="1">{
+                return r, domain.Err(403, "forbidden", "Только руководитель команды, кроме своей заявки")
+        }</span>
+        <span class="cov8" title="1">if r.Status != "pending" </span><span class="cov8" title="1">{
+                return r, domain.Err(409, "conflict", "Заявка уже рассмотрена")
+        }</span>
+        <span class="cov8" title="1">r.Status = status
+        r.DecidedBy = u.ID
+        r.DecisionComment = comment
+        r.UpdatedAt = s.Now()
+        if _, e = s.Corp.Call(ctx, "POST", corpPath(r.Type)+"/"+r.ExternalID+"/decision", r, fail); e != nil </span><span class="cov0" title="0">{
+                return r, &amp;domain.Error{Status: 503, Code: "upstream_unavailable", Message: "Не удалось согласовать", Details: map[string]bool{"retryable": true}}
+        }</span>
+        <span class="cov8" title="1">if e = s.Repo.SaveRequest(ctx, r); e != nil </span><span class="cov0" title="0">{
+                return r, e
+        }</span>
+        <span class="cov8" title="1">return r, s.CloseAccess(ctx, owner)</span>
+}
+func (s *Service) CloseAccess(ctx context.Context, u domain.User) error <span class="cov8" title="1">{
+        items, e := s.Overview(ctx, u)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">for _, t := range items </span><span class="cov8" title="1">{
+                if t["required"] == true &amp;&amp; t["status"] != "granted" </span><span class="cov8" title="1">{
+                        return nil
+                }</span>
+        }
+        <span class="cov8" title="1">p, e := s.Repo.Plan(ctx, u.ID)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">for i := range p </span><span class="cov8" title="1">{
+                for j := range p[i].Tasks </span><span class="cov8" title="1">{
+                        if p[i].Tasks[j].Code == "get_access" </span><span class="cov8" title="1">{
+                                p[i].Tasks[j].Status = "done"
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return s.Repo.SavePlan(ctx, u.ID, p)</span>
+}
+func (s *Service) Plan(ctx context.Context, u domain.User, id string) ([]domain.Stage, error) <span class="cov8" title="1">{
+        if id == "" </span><span class="cov8" title="1">{
+                id = u.ID
+        }</span>
+        <span class="cov8" title="1">target, e := s.Repo.User(ctx, id)
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, domain.Err(404, "not_found", "Пользователь не найден")
+        }</span>
+        <span class="cov8" title="1">if !rbac.Can(u, "plan", Resource(target)) </span><span class="cov8" title="1">{
+                return nil, domain.Err(403, "forbidden", "Нет доступа к плану")
+        }</span>
+        <span class="cov8" title="1">return s.Repo.Plan(ctx, id)</span>
+}
+func (s *Service) Task(ctx context.Context, u domain.User, id, status, comment string) error <span class="cov8" title="1">{
+        if !rbac.Can(u, "task", Resource(u)) </span><span class="cov8" title="1">{
+                return domain.Err(403, "forbidden", "Изменять задачи может только стажёр")
+        }</span>
+        <span class="cov8" title="1">if status != "todo" &amp;&amp; status != "in_progress" &amp;&amp; status != "done" &amp;&amp; status != "blocked" </span><span class="cov8" title="1">{
+                return domain.Err(400, "validation_error", "Неизвестный статус")
+        }</span>
+        <span class="cov8" title="1">p, e := s.Repo.Plan(ctx, u.ID)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">for i := range p </span><span class="cov8" title="1">{
+                for j := range p[i].Tasks </span><span class="cov8" title="1">{
+                        t := &amp;p[i].Tasks[j]
+                        if t.ID == id </span><span class="cov8" title="1">{
+                                if t.Code == "get_access" </span><span class="cov8" title="1">{
+                                        return domain.Err(409, "conflict", "Статус доступов изменяется автоматически")
+                                }</span>
+                                <span class="cov8" title="1">t.Status = status
+                                t.Comment = comment
+                                return s.Repo.SavePlan(ctx, u.ID, p)</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return domain.Err(404, "not_found", "Задача не найдена")</span>
+}
+func Progress(p []domain.Stage) map[string]any <span class="cov8" title="1">{
+        total, done := 0, 0
+        stages := []map[string]any{}
+        current := ""
+        next := []domain.Task{}
+        for _, stage := range p </span><span class="cov8" title="1">{
+                n, d := 0, 0
+                pending := []domain.Task{}
+                for _, t := range stage.Tasks </span><span class="cov8" title="1">{
+                        if t.Required </span><span class="cov8" title="1">{
+                                n++
+                                if t.Status == "done" </span><span class="cov8" title="1">{
+                                        d++
+                                }</span> else<span class="cov8" title="1"> {
+                                        pending = append(pending, t)
+                                }</span>
+                        }
+                }
+                <span class="cov8" title="1">if current == "" &amp;&amp; len(pending) &gt; 0 </span><span class="cov8" title="1">{
+                        current = stage.ID
+                        next = pending
+                        if len(next) &gt; 3 </span><span class="cov0" title="0">{
+                                next = next[:3]
+                        }</span>
+                }
+                <span class="cov8" title="1">pct := 100
+                if n &gt; 0 </span><span class="cov8" title="1">{
+                        pct = d * 100 / n
+                }</span>
+                <span class="cov8" title="1">stages = append(stages, map[string]any{"stage_id": stage.ID, "percent": pct})
+                total += n
+                done += d</span>
+        }
+        <span class="cov8" title="1">pct := 100
+        if total &gt; 0 </span><span class="cov8" title="1">{
+                pct = done * 100 / total
+        }</span>
+        <span class="cov8" title="1">return map[string]any{"percent": pct, "stages": stages, "current_stage": current, "next_steps": next}</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service
+
+import (
+        "aibuddy/backend/internal/domain"
+        "context"
+)
+
+// Sync refreshes a visible request from the corporate system.
+func (s *Service) Sync(ctx context.Context, u domain.User, id string) (domain.Request, error) <span class="cov8" title="1">{
+        r, e := s.Request(ctx, u, id)
+        if e != nil || r.ExternalID == "" || r.Status == "failed" </span><span class="cov8" title="1">{
+                return r, e
+        }</span>
+        <span class="cov8" title="1">remote, e := s.Corp.Call(ctx, "GET", corpPath(r.Type)+"/"+r.ExternalID, r, false)
+        if e != nil </span><span class="cov8" title="1">{
+                return r, &amp;domain.Error{Status: 503, Code: "upstream_unavailable", Message: "Не удалось обновить статус", Details: map[string]bool{"retryable": true}}
+        }</span>
+        <span class="cov8" title="1">if remote.Status != "pending" &amp;&amp; remote.Status != "approved" &amp;&amp; remote.Status != "rejected" </span><span class="cov0" title="0">{
+                return r, domain.Err(503, "upstream_unavailable", "Некорректный статус сервиса")
+        }</span>
+        <span class="cov8" title="1">if remote.Status != r.Status </span><span class="cov8" title="1">{
+                r.Status = remote.Status
+                r.UpdatedAt = s.Now()
+                if e = s.Repo.SaveRequest(ctx, r); e != nil </span><span class="cov0" title="0">{
+                        return r, e
+                }</span>
+                <span class="cov8" title="1">owner, e := s.Repo.User(ctx, r.UserID)
+                if e != nil </span><span class="cov0" title="0">{
+                        return r, e
+                }</span>
+                <span class="cov8" title="1">if r.Type == "access" </span><span class="cov8" title="1">{
+                        e = s.CloseAccess(ctx, owner)
+                }</span>
+                <span class="cov8" title="1">return r, e</span>
+        }
+        <span class="cov8" title="1">return r, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package storage
+
+import (
+        "aibuddy/backend/internal/domain"
+        "context"
+        "encoding/json"
+        "fmt"
+        "github.com/jackc/pgx/v5"
+        "golang.org/x/crypto/bcrypt"
+        "time"
+)
+
+func (s *Store) Seed(ctx context.Context) error <span class="cov8" title="1">{
+        tx, e := s.DB.Begin(ctx)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback(ctx)
+        if e = s.seedTx(ctx, tx); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">return tx.Commit(ctx)</span>
+}
+func (s *Store) seedTx(ctx context.Context, tx pgx.Tx) error <span class="cov8" title="1">{
+        var e error
+        if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(123456)"); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">var count int
+        if e = tx.QueryRow(ctx, "SELECT count(*) FROM users").Scan(&amp;count); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">if count &gt; 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">teams := []domain.Team{{ID: "delivery", Name: "Команда Доставки", Rules: "Тестовые правила: два ревьюера для Go", Standup: "Тестовый стендап в 10:00", Tools: []domain.Tool{{Code: "gitlab", Title: "GitLab", Purpose: "Код и CI", Required: true}, {Code: "kafka", Title: "Kafka", Purpose: "События", Required: true}, {Code: "grafana", Title: "Grafana", Purpose: "Мониторинг", Required: true}}}, {ID: "frontend", Name: "Команда Фронтенда Объявлений", Rules: "Тестовые правила: один ревьюер и Storybook", Standup: "Тестовый стендап в 11:00", Tools: []domain.Tool{{Code: "gitlab", Title: "GitLab", Purpose: "Код и CI", Required: true}, {Code: "storybook", Title: "Storybook", Purpose: "Компоненты React", Required: true}, {Code: "sentry", Title: "Sentry", Purpose: "Ошибки браузера", Required: true}}}}
+        for _, t := range teams </span><span class="cov8" title="1">{
+                t.IsTestData = true
+                t.Description = "Синтетическая команда для демо"
+                b, _ := json.Marshal(t)
+                if _, e = tx.Exec(ctx, "SELECT save_teams($1)", b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        }
+        <span class="cov8" title="1">hash, e := bcrypt.GenerateFromPassword([]byte("test1234"), bcrypt.DefaultCost)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">users := []domain.User{{ID: "anna", Login: "intern_anna", FullName: "Анна", Role: "intern", TeamID: "delivery", BuddyID: "dmitry", LeadID: "elena"}, {ID: "boris", Login: "intern_boris", FullName: "Борис", Role: "intern", TeamID: "delivery", BuddyID: "dmitry", LeadID: "elena"}, {ID: "vera", Login: "intern_vera", FullName: "Вера", Role: "intern", TeamID: "frontend", LeadID: "fedor"}, {ID: "dmitry", Login: "buddy_dmitry", FullName: "Дмитрий", Role: "buddy", TeamID: "delivery", LeadID: "elena"}, {ID: "elena", Login: "lead_elena", FullName: "Елена", Role: "lead", TeamID: "delivery"}, {ID: "fedor", Login: "lead_fedor", FullName: "Фёдор", Role: "lead", TeamID: "frontend"}}
+        titles := []string{"Знакомство с командой", "Прочитать документацию", "Получить доступы", "Настроить окружение", "Изучить код-ревью", "Посетить стендап", "Изучить архитектуру", "Запустить тесты", "Выбрать первую задачу", "Открыть merge request", "Пройти ревью", "Проверить мониторинг", "Обсудить прогресс", "Получить обратную связь", "Согласовать следующие цели"}
+        for _, u := range users </span><span class="cov8" title="1">{
+                u.StartDate = time.Now().Format("2006-01-02")
+                b, _ := json.Marshal(u)
+                if _, e = tx.Exec(ctx, "SELECT save_users($1::jsonb || jsonb_build_object('password_hash',$2::text))", b, string(hash)); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+                <span class="cov8" title="1">stages := []domain.Stage{}
+                for i, name := range []string{"Первый день", "Первая неделя", "Первая задача", "Обратная связь", "Следующие шаги"} </span><span class="cov8" title="1">{
+                        st := domain.Stage{ID: fmt.Sprint(i + 1), Ord: i + 1, Title: name, Tasks: []domain.Task{}}
+                        for j := 0; j &lt; 3; j++ </span><span class="cov8" title="1">{
+                                n := i*3 + j
+                                code := fmt.Sprintf("task_%d", n+1)
+                                if n == 2 </span><span class="cov8" title="1">{
+                                        code = "get_access"
+                                }</span>
+                                <span class="cov8" title="1">status := "todo"
+                                if u.ID == "anna" &amp;&amp; n &lt; 2 </span><span class="cov8" title="1">{
+                                        status = "done"
+                                }</span>
+                                <span class="cov8" title="1">st.Tasks = append(st.Tasks, domain.Task{ID: fmt.Sprint(n + 1), StageID: st.ID, Code: code, Title: titles[n], Description: "Тестовая задача адаптации; обсудите результат с наставником", Required: true, Status: status})</span>
+                        }
+                        <span class="cov8" title="1">stages = append(stages, st)</span>
+                }
+                <span class="cov8" title="1">b, _ = json.Marshal(stages)
+                if _, e = tx.Exec(ctx, "SELECT save_plan($1,$2)", u.ID, b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        }
+        <span class="cov8" title="1">for i, topic := range []string{"Отгул", "Отпуск", "Адаптация", "Наставник", "Документация", "Доступы", "Обратная связь", "Безопасность"} </span><span class="cov8" title="1">{
+                a := domain.Article{ID: fmt.Sprintf("common-%d", i), Title: topic, Body: "Тестовая инструкция, не регламент Авито. " + topic + ": обсудите вопрос с наставником. Отгул оформляется заявкой с будущими датами на период до 14 дней и согласуется руководителем.", Tags: []string{topic}, IsTestData: true}
+                b, _ := json.Marshal(a)
+                if _, e = tx.Exec(ctx, "SELECT save_knowledge_articles($1)", b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        }
+        <span class="cov8" title="1">for _, t := range teams </span><span class="cov8" title="1">{
+                topics := []string{"Код-ревью", "Стендап", "Инструменты", "gitlab", "Документация", "Доступы"}
+                for i, topic := range topics </span><span class="cov8" title="1">{
+                        a := domain.Article{ID: fmt.Sprintf("%s-%d", t.ID, i), TeamID: t.ID, Title: topic + " — " + t.Name, Body: "Тестовая инструкция, не регламент Авито. " + t.Rules + ". " + t.Standup + ". Доступы согласует руководитель команды.", Tags: []string{topic}, IsTestData: true}
+                        for _, tool := range t.Tools </span><span class="cov8" title="1">{
+                                a.Body += " " + tool.Title + ": " + tool.Purpose + "."
+                        }</span>
+                        <span class="cov8" title="1">b, _ := json.Marshal(a)
+                        if _, e = tx.Exec(ctx, "SELECT save_knowledge_articles($1)", b); e != nil </span><span class="cov0" title="0">{
+                                return e
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">for i, status := range []string{"approved", "pending"} </span><span class="cov8" title="1">{
+                r := domain.Request{ID: fmt.Sprintf("seed-access-%d", i), UserID: "anna", Type: "access", Payload: map[string]string{"system_code": []string{"gitlab", "kafka"}[i], "reason": "Тестовый доступ"}, Status: status, ExternalID: fmt.Sprintf("seed-access-%d", i), CreatedAt: time.Now(), UpdatedAt: time.Now()}
+                b, _ := json.Marshal(r)
+                if _, e = tx.Exec(ctx, "SELECT save_requests($1)", b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+                <span class="cov8" title="1">if _, e = tx.Exec(ctx, "INSERT INTO corp_requests VALUES($1,$2)", r.ID, b); e != nil </span><span class="cov0" title="0">{
+                        return e
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+// ResetDemo resets only the active synthetic dataset; migration snapshots remain intact.
+func (s *Store) ResetDemo(ctx context.Context) error <span class="cov8" title="1">{
+        tx, e := s.DB.Begin(ctx)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">defer tx.Rollback(ctx)
+        if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(814422)"); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">if _, e = tx.Exec(ctx, "TRUNCATE idempotency,corp_requests,chat_messages,events,requests,user_tasks,onboarding_tasks,onboarding_stages,knowledge_articles,team_tools,users,teams RESTART IDENTITY"); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">if e = s.seedTx(ctx, tx); e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">return tx.Commit(ctx)</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package storage
+
+import (
+        "aibuddy/backend/internal/domain"
+        "context"
+        "encoding/json"
+        "github.com/jackc/pgx/v5/pgxpool"
+)
+
+type Store struct{ DB *pgxpool.Pool }
+
+func (s *Store) User(ctx context.Context, id string) (domain.User, error) <span class="cov8" title="1">{
+        var u domain.User
+        var b []byte
+        err := s.DB.QueryRow(ctx, "SELECT a.data,u.password_hash FROM users u JOIN users_api a USING(id) WHERE id=$1", id).Scan(&amp;b, &amp;u.PasswordHash)
+        if err == nil </span><span class="cov8" title="1">{
+                err = json.Unmarshal(b, &amp;u)
+        }</span>
+        <span class="cov8" title="1">return u, err</span>
+}
+func (s *Store) Get(ctx context.Context, table, id string, out any) error <span class="cov8" title="1">{
+        var b []byte
+        err := s.DB.QueryRow(ctx, "SELECT data FROM "+table+"_api WHERE id=$1", id).Scan(&amp;b)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return json.Unmarshal(b, out)</span>
+}
+func (s *Store) Requests(ctx context.Context) ([]domain.Request, error) <span class="cov8" title="1">{
+        rows, e := s.DB.Query(ctx, "SELECT data FROM requests_api ORDER BY data-&gt;&gt;'created_at',id")
+        if e != nil </span><span class="cov0" title="0">{
+                return nil, e
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        a := []domain.Request{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                var b []byte
+                var r domain.Request
+                if e = rows.Scan(&amp;b); e != nil </span><span class="cov0" title="0">{
+                        return nil, e
+                }</span>
+                <span class="cov8" title="1">if e = json.Unmarshal(b, &amp;r); e != nil </span><span class="cov0" title="0">{
+                        return nil, e
+                }</span>
+                <span class="cov8" title="1">a = append(a, r)</span>
+        }
+        <span class="cov8" title="1">return a, rows.Err()</span>
+}
+func (s *Store) SaveRequest(ctx context.Context, r domain.Request) error <span class="cov8" title="1">{
+        b, e := json.Marshal(r)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">_, e = s.DB.Exec(ctx, "SELECT save_requests($1)", b)
+        return e</span>
+}
+func (s *Store) Plan(ctx context.Context, id string) ([]domain.Stage, error) <span class="cov8" title="1">{
+        var b []byte
+        a := []domain.Stage{}
+        e := s.DB.QueryRow(ctx, "SELECT data FROM user_plans_api WHERE user_id=$1", id).Scan(&amp;b)
+        if e == nil </span><span class="cov8" title="1">{
+                e = json.Unmarshal(b, &amp;a)
+        }</span>
+        <span class="cov8" title="1">return a, e</span>
+}
+func (s *Store) SavePlan(ctx context.Context, id string, p []domain.Stage) error <span class="cov8" title="1">{
+        b, e := json.Marshal(p)
+        if e != nil </span><span class="cov0" title="0">{
+                return e
+        }</span>
+        <span class="cov8" title="1">_, e = s.DB.Exec(ctx, "SELECT save_plan($1,$2)", id, b)
+        return e</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
