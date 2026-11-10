@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: buddy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-demo-only-password}
+      POSTGRES_DB: buddy
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U buddy -d buddy']
+      interval: 3s
+      timeout: 2s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+  migrate:
+    image: migrate/migrate:v4.18.1
+    volumes: [./backend/migrations:/migrations:ro]
+    command: ['-path', /migrations, '-database', 'postgres://buddy:${POSTGRES_PASSWORD:-demo-only-password}@postgres:5432/buddy?sslmode=disable', up]
+    depends_on:
+      postgres: {condition: service_healthy}
+  corp-mock:
+    build: ./backend
+    command: corp-mock
+    environment:
+      DATABASE_URL: postgres://buddy:${POSTGRES_PASSWORD:-demo-only-password}@postgres:5432/buddy?sslmode=disable
+      CORP_TOKEN: ${CORP_TOKEN:-local-demo-corporate-service-token}
+      CORP_MOCK_FAIL_RATE: ${CORP_MOCK_FAIL_RATE:-0}
+    ports: ['127.0.0.1:8090:8090']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://localhost:8090/healthz']
+      interval: 5s
+      timeout: 2s
+      retries: 10
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://buddy:${POSTGRES_PASSWORD:-demo-only-password}@postgres:5432/buddy?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-local-demo-only-jwt-secret-32-characters}
+      CORP_TOKEN: ${CORP_TOKEN:-local-demo-corporate-service-token}
+      CORP_MOCK_URL: http://corp-mock:8090
+    ports: ['127.0.0.1:8080:8080']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      corp-mock: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://localhost:8080/readyz']
+      interval: 5s
+      timeout: 2s
+      retries: 10
+volumes:
+  pgdata:

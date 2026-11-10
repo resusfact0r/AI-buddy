@@ -1,0 +1,18 @@
+name: backend
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+      - run: docker compose -p buddy-lint -f docker-compose.lint.yml run --rm lint
+      - run: docker compose -p buddy-tests -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage.*

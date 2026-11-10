@@ -1,0 +1,51 @@
+-- Legacy tables are retained intact as a migration snapshot. No source rows are deleted.
+ALTER TABLE teams RENAME TO teams_legacy;
+CREATE TABLE teams(id text PRIMARY KEY,name text,description text,rules text,standup text,docs_url text,is_test_data boolean);
+CREATE TABLE team_tools(team_id text REFERENCES teams(id),system_code text,title text,purpose text,required boolean NOT NULL,PRIMARY KEY(team_id,system_code));
+CREATE VIEW teams_api AS SELECT t.id,to_jsonb(t) || jsonb_build_object('tools',coalesce((SELECT jsonb_agg(to_jsonb(x)-'team_id' ORDER BY system_code) FROM team_tools x WHERE x.team_id=t.id),'[]'::jsonb)) AS data FROM teams t;
+CREATE FUNCTION save_teams(p jsonb) RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO teams(id,name,description,rules,standup,docs_url,is_test_data) VALUES(p->>'id',(p->>'name')::text,(p->>'description')::text,(p->>'rules')::text,(p->>'standup')::text,(p->>'docs_url')::text,(p->>'is_test_data')::boolean) ON CONFLICT(id) DO UPDATE SET name=excluded.name,description=excluded.description,rules=excluded.rules,standup=excluded.standup,docs_url=excluded.docs_url,is_test_data=excluded.is_test_data;INSERT INTO team_tools SELECT p->>'id',x->>'system_code',x->>'title',x->>'purpose',(x->>'required')::boolean FROM jsonb_array_elements(p->'tools') x ON CONFLICT(team_id,system_code) DO UPDATE SET title=excluded.title,purpose=excluded.purpose,required=excluded.required; END $$;
+SELECT save_teams(data) FROM teams_legacy;
+ALTER TABLE users RENAME TO users_legacy;
+CREATE TABLE users(id text PRIMARY KEY,login text,password_hash text,full_name text,role text,team_id text,buddy_id text,lead_id text,start_date date);
+CREATE VIEW users_api AS SELECT t.id,to_jsonb(t) - 'password_hash' AS data FROM users t;
+CREATE FUNCTION save_users(p jsonb) RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO users(id,login,password_hash,full_name,role,team_id,buddy_id,lead_id,start_date) VALUES(p->>'id',(p->>'login')::text,(p->>'password_hash')::text,(p->>'full_name')::text,(p->>'role')::text,nullif(p->>'team_id',''),nullif(p->>'buddy_id',''),nullif(p->>'lead_id',''),(p->>'start_date')::date) ON CONFLICT(id) DO UPDATE SET login=excluded.login,password_hash=excluded.password_hash,full_name=excluded.full_name,role=excluded.role,team_id=excluded.team_id,buddy_id=excluded.buddy_id,lead_id=excluded.lead_id,start_date=excluded.start_date; END $$;
+SELECT save_users(data || jsonb_build_object('password_hash',password_hash)) FROM users_legacy;
+ALTER TABLE requests RENAME TO requests_legacy;
+CREATE TABLE requests(id text PRIMARY KEY,user_id text,type text,payload jsonb,status text,external_id text,decided_by text,decision_comment text,created_at timestamptz,updated_at timestamptz);
+CREATE VIEW requests_api AS SELECT t.id,to_jsonb(t) AS data FROM requests t;
+CREATE FUNCTION save_requests(p jsonb) RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO requests(id,user_id,type,payload,status,external_id,decided_by,decision_comment,created_at,updated_at) VALUES(p->>'id',(p->>'user_id')::text,(p->>'type')::text,p->'payload',(p->>'status')::text,(p->>'external_id')::text,nullif(p->>'decided_by',''),(p->>'decision_comment')::text,(p->>'created_at')::timestamptz,(p->>'updated_at')::timestamptz) ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,type=excluded.type,payload=excluded.payload,status=excluded.status,external_id=excluded.external_id,decided_by=excluded.decided_by,decision_comment=excluded.decision_comment,created_at=excluded.created_at,updated_at=excluded.updated_at; END $$;
+SELECT save_requests(data) FROM requests_legacy;
+ALTER TABLE knowledge_articles RENAME TO knowledge_articles_legacy;
+CREATE TABLE knowledge_articles(id text PRIMARY KEY,title text,body text,tags text[],team_id text,is_test_data boolean);
+CREATE VIEW knowledge_articles_api AS SELECT t.id,to_jsonb(t) AS data FROM knowledge_articles t;
+CREATE FUNCTION save_knowledge_articles(p jsonb) RETURNS void LANGUAGE plpgsql AS $$ BEGIN INSERT INTO knowledge_articles(id,title,body,tags,team_id,is_test_data) VALUES(p->>'id',(p->>'title')::text,(p->>'body')::text,ARRAY(SELECT jsonb_array_elements_text(p->'tags')),nullif(p->>'team_id',''),(p->>'is_test_data')::boolean) ON CONFLICT(id) DO UPDATE SET title=excluded.title,body=excluded.body,tags=excluded.tags,team_id=excluded.team_id,is_test_data=excluded.is_test_data; END $$;
+SELECT save_knowledge_articles(data) FROM knowledge_articles_legacy;
+ALTER TABLE onboarding_stages RENAME TO onboarding_stages_legacy;
+CREATE TABLE onboarding_stages(id text PRIMARY KEY,ord integer NOT NULL,title text NOT NULL,description text NOT NULL DEFAULT '');
+CREATE TABLE onboarding_tasks(id text PRIMARY KEY,stage_id text REFERENCES onboarding_stages(id),code text NOT NULL,title text NOT NULL,description text,link text,required boolean NOT NULL,team_id text REFERENCES teams(id));
+CREATE TABLE user_tasks(user_id text REFERENCES users(id),task_id text REFERENCES onboarding_tasks(id),status text NOT NULL CHECK(status IN ('todo','in_progress','done','blocked')),comment text,updated_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(user_id,task_id));
+CREATE FUNCTION save_plan(uid text,p jsonb) RETURNS void LANGUAGE plpgsql AS $$ DECLARE st jsonb; task jsonb; BEGIN
+FOR st IN SELECT * FROM jsonb_array_elements(p) LOOP
+INSERT INTO onboarding_stages(id,ord,title) VALUES(st->>'id',(st->>'ord')::int,st->>'title') ON CONFLICT(id) DO NOTHING;
+FOR task IN SELECT * FROM jsonb_array_elements(st->'tasks') LOOP
+INSERT INTO onboarding_tasks VALUES(task->>'id',st->>'id',task->>'code',task->>'title',task->>'description',task->>'link',(task->>'required')::boolean,nullif(task->>'team_id','')) ON CONFLICT(id) DO NOTHING;
+INSERT INTO user_tasks(user_id,task_id,status,comment) VALUES(uid,task->>'id',task->>'status',task->>'comment') ON CONFLICT(user_id,task_id) DO UPDATE SET status=excluded.status,comment=excluded.comment,updated_at=now();
+END LOOP; END LOOP; END $$;
+SELECT save_plan(user_id,data) FROM user_plans;
+CREATE VIEW user_plans_api AS SELECT u.id AS user_id,coalesce((SELECT jsonb_agg(jsonb_build_object('id',s.id,'ord',s.ord,'title',s.title,'tasks',(SELECT jsonb_agg((to_jsonb(t)-'team_id') || jsonb_build_object('status',ut.status,'comment',ut.comment) ORDER BY t.id::int) FROM onboarding_tasks t JOIN user_tasks ut ON ut.task_id=t.id WHERE t.stage_id=s.id AND ut.user_id=u.id)) ORDER BY s.ord) FROM onboarding_stages s),'[]'::jsonb) AS data FROM users u;
+ALTER TABLE users ADD CONSTRAINT users_login_normalized UNIQUE(login), ADD CHECK(role IN ('intern','buddy','lead')), ADD FOREIGN KEY(team_id) REFERENCES teams(id);
+ALTER TABLE requests ADD CHECK(type IN ('leave','access')), ADD CHECK(status IN ('pending','approved','rejected','failed')), ADD FOREIGN KEY(user_id) REFERENCES users(id);
+ALTER TABLE knowledge_articles ADD COLUMN tsv tsvector GENERATED ALWAYS AS(to_tsvector('russian',coalesce(title,'') || ' ' || coalesce(body,''))) STORED;
+CREATE INDEX knowledge_search_normalized ON knowledge_articles USING gin(tsv);
+CREATE INDEX requests_user_normalized ON requests(user_id);
+ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_user_id_fkey;
+ALTER TABLE chat_messages ADD FOREIGN KEY(user_id) REFERENCES users(id);
+ALTER TABLE events DROP CONSTRAINT events_user_id_fkey;
+ALTER TABLE events ADD FOREIGN KEY(user_id) REFERENCES users(id);ALTER TABLE chat_messages ADD COLUMN role text GENERATED ALWAYS AS(data->>'role') STORED;
+ALTER TABLE chat_messages ADD COLUMN content text GENERATED ALWAYS AS(data->>'content') STORED;
+ALTER TABLE chat_messages ADD COLUMN meta jsonb GENERATED ALWAYS AS(data->'meta') STORED;
+ALTER TABLE events ADD COLUMN type text GENERATED ALWAYS AS(data->>'type') STORED;
+ALTER TABLE events ADD COLUMN payload jsonb GENERATED ALWAYS AS(data->'payload') STORED;
+ALTER TABLE knowledge_articles ALTER COLUMN is_test_data SET DEFAULT true;
+ALTER TABLE knowledge_articles ALTER COLUMN is_test_data SET NOT NULL;
+ALTER TABLE knowledge_articles ADD CONSTRAINT knowledge_test_only CHECK(is_test_data);

@@ -1,0 +1,7 @@
+.env
+backend/coverage.out
+backend/coverage.html
+*.exe
+
+.verify/
+backend/coverage.txt
