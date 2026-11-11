@@ -1,0 +1,43 @@
+name: agent
+
+on:
+  push:
+    paths: ["agent/**", "evals/**", "specs/**", ".github/workflows/agent.yml"]
+  pull_request:
+    paths: ["agent/**", "evals/**", "specs/**", ".github/workflows/agent.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: agent/go.mod
+          cache-dependency-path: agent/go.sum
+      - name: Lint (gofmt + go vet)
+        run: make lint
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: agent
+        continue-on-error: true
+      - name: Tests with coverage
+        run: make coverage
+      - name: Coverage gate (> 80%)
+        run: |
+          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
+          echo "coverage: ${total}%"
+          awk -v t="$total" 'BEGIN { exit (t > 80) ? 0 : 1 }'
+      - name: Evals on mock LLM
+        run: make evals
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-coverage
+          path: |
+            agent/coverage.out
+            agent/coverage.html
+            evals/report.md
