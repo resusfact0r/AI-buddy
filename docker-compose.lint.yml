@@ -1,0 +1,9 @@
+services:
+  lint:
+    image: golangci/golangci-lint:v2.11.3
+    working_dir: /src
+    volumes: [./backend:/src, lint-cache:/root/.cache, lint-mod:/go/pkg/mod]
+    command: golangci-lint run ./...
+volumes:
+  lint-cache:
+  lint-mod:

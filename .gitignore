@@ -1,4 +1,9 @@
 .env
+backend/coverage.out
+backend/coverage.html
+backend/coverage.txt
+*.exe
+.verify/
 *.out
 coverage.html
 agent/bin/

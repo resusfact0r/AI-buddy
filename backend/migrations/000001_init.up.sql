@@ -1,0 +1,13 @@
+CREATE TABLE teams(id text PRIMARY KEY, data jsonb NOT NULL);
+CREATE TABLE users(id text PRIMARY KEY, login text UNIQUE NOT NULL, password_hash text NOT NULL, data jsonb NOT NULL);
+CREATE TABLE onboarding_stages(id text PRIMARY KEY, data jsonb NOT NULL);
+CREATE TABLE user_plans(user_id text PRIMARY KEY REFERENCES users(id), data jsonb NOT NULL);
+CREATE TABLE requests(id text PRIMARY KEY, user_id text NOT NULL REFERENCES users(id), data jsonb NOT NULL);
+CREATE INDEX requests_user ON requests(user_id);
+CREATE TABLE knowledge_articles(id text PRIMARY KEY, team_id text, data jsonb NOT NULL, tsv tsvector GENERATED ALWAYS AS (to_tsvector('russian',coalesce(data->>'title','') || ' ' || coalesce(data->>'body',''))) STORED);
+CREATE INDEX knowledge_search ON knowledge_articles USING gin(tsv);
+CREATE TABLE chat_messages(id bigserial PRIMARY KEY,user_id text NOT NULL REFERENCES users(id),conversation_id text NOT NULL,data jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX chat_owner ON chat_messages(user_id,conversation_id,id);
+CREATE TABLE events(id bigserial PRIMARY KEY,user_id text NOT NULL REFERENCES users(id),data jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE corp_requests(id text PRIMARY KEY,data jsonb NOT NULL);
+CREATE TABLE idempotency(user_id text NOT NULL,key text NOT NULL,body_hash text NOT NULL,response jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(user_id,key));
