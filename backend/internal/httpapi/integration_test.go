@@ -145,7 +145,6 @@ func TestIntegration(t *testing.T) {
 	if e != nil || p[0].Tasks[2].Status != "done" {
 		t.Fatal("access task not done", e)
 	}
-	// Exercise recovery and corporate protocol errors against the real mock.
 	for _, tc := range []struct {
 		method, path, body string
 		code               int
@@ -198,7 +197,6 @@ func TestIntegration(t *testing.T) {
 		}
 		call("POST", "/auth/login", "", `{"login":"rate_`+schema+`","password":"bad"}`, "", want)
 	}
-	// Rejection and explicit upstream failure.
 	rejected := call("POST", "/requests/access", "boris", `{"system_code":"grafana","reason":"work"}`, service.ID(), 201)
 	call("POST", "/requests/"+rejected["id"].(string)+"/reject", "elena", `{}`, "", 200)
 	savedCorp := svc.Corp
@@ -206,7 +204,6 @@ func TestIntegration(t *testing.T) {
 	call("POST", "/requests/access", "vera", `{"system_code":"sentry","reason":"work"}`, service.ID(), 503)
 	call("GET", "/requests/"+id, "anna", "", "", 503)
 	svc.Corp = savedCorp
-	// External decision is synchronized on GET.
 	syncReq := call("POST", "/requests/access", "boris", `{"system_code":"kafka","reason":"work"}`, service.ID(), 201)
 	_, e = db.Exec(ctx, `UPDATE corp_requests SET data=jsonb_set(data,'{status}','"approved"') WHERE id=$1`, syncReq["external_id"])
 	if e != nil {

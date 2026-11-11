@@ -99,7 +99,6 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, domain.Err(404, "not_found", "Маршрут не найден"))
 		return
 	}
-	// A database advisory lock serializes mutations across API replicas and keeps validation atomic.
 	if r.Method != "GET" || strings.HasPrefix(path, "/requests/") {
 		conn, err := a.Store.DB.Acquire(ctx)
 		if err != nil {

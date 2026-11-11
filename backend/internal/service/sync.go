@@ -5,7 +5,6 @@ import (
 	"context"
 )
 
-// Sync refreshes a visible request from the corporate system.
 func (s *Service) Sync(ctx context.Context, u domain.User, id string) (domain.Request, error) {
 	r, e := s.Request(ctx, u, id)
 	if e != nil || r.ExternalID == "" || r.Status == "failed" {

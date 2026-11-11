@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 )
 
-// Persist the successful result and its idempotency record in one transaction.
 type idemRepository struct {
 	*storage.Store
 	key, hash string

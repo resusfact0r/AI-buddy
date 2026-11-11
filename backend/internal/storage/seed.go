@@ -109,7 +109,6 @@ func (s *Store) seedTx(ctx context.Context, tx pgx.Tx) error {
 	return nil
 }
 
-// ResetDemo resets only the active synthetic dataset; migration snapshots remain intact.
 func (s *Store) ResetDemo(ctx context.Context) error {
 	tx, e := s.DB.Begin(ctx)
 	if e != nil {

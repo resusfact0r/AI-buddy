@@ -1,4 +1,3 @@
--- Legacy tables are retained intact as a migration snapshot. No source rows are deleted.
 ALTER TABLE teams RENAME TO teams_legacy;
 CREATE TABLE teams(id text PRIMARY KEY,name text,description text,rules text,standup text,docs_url text,is_test_data boolean);
 CREATE TABLE team_tools(team_id text REFERENCES teams(id),system_code text,title text,purpose text,required boolean NOT NULL,PRIMARY KEY(team_id,system_code));
