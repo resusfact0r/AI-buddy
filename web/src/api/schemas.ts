@@ -70,7 +70,7 @@ export type Team = z.infer<typeof TeamSchema>;
 
 /* ───────────── Онбординг ───────────── */
 
-export const TaskStatusSchema = z.enum(['todo', 'in_progress', 'done']);
+export const TaskStatusSchema = z.enum(['todo', 'in_progress', 'done', 'blocked']);
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
 export const TaskSchema = z.object({
@@ -158,7 +158,7 @@ export const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
   sick_leave: 'Больничный',
 };
 
-export const RequestStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+export const RequestStatusSchema = z.enum(['pending', 'approved', 'rejected', 'failed']);
 export type RequestStatus = z.infer<typeof RequestStatusSchema>;
 export const RequestTypeSchema = z.enum(['leave', 'access']);
 export type RequestType = z.infer<typeof RequestTypeSchema>;
@@ -308,6 +308,7 @@ export const ActionResultStatusSchema = z.enum([
   'done',
   'failed',
   'cancelled',
+  'partial',
 ]);
 export type ActionResultStatus = z.infer<typeof ActionResultStatusSchema>;
 

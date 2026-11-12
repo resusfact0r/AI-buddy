@@ -24,6 +24,7 @@ import { cn } from '@/lib/cn';
 
 const TYPE_LABEL: Record<RequestType, string> = { leave: 'Отгулы', access: 'Доступы' };
 const STATUS_LABEL: Record<RequestStatus, string> = {
+  failed: 'Ошибка',
   pending: 'На согласовании',
   approved: 'Одобрены',
   rejected: 'Отклонены',

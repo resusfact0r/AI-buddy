@@ -1,6 +1,6 @@
-# AI-buddy — Бэк1
+# AI-buddy
 
-В этом репозитории реализуется только зона Бэк1: API, имитация корпоративных сервисов, данные и инфраструктура. Агент, MCP, фронтенд, их SDD-спецификации, презентация и видео относятся к другим участникам и сюда не добавлены.
+Общий проект команды: API и корпоративный мок в `backend/`, агент и MCP в `agent/`, интерфейс в `web/`. Корневой Docker Compose запускает все компоненты вместе.
 
 Все пользователи, команды и инструкции синтетические. Это не регламенты Авито.
 
@@ -21,11 +21,13 @@ API: http://127.0.0.1:8080/api/v1. Corp-mock: http://127.0.0.1:8090. Внутр�
 
 ## Веб-интерфейс
 
-Фронтенд — в `web/` (React 18 + TypeScript, Vite), подробности в [web/README.md](web/README.md). В Compose это сервис `web` на http://127.0.0.1:3000.
+Фронтенд — в `web/` (React 18 + TypeScript, Vite), подробности в [web/README.md](web/README.md). Открыть приложение после запуска: http://127.0.0.1:3000. В Compose браузер обращается к API и агенту через `/api/v1` на том же адресе; отдельная настройка CORS не требуется.
+
+По умолчанию `LLM_PROVIDER=mock`: сценарный агент работает без внешнего ключа. API, PostgreSQL, Redis, MCP и создание заявок настоящие; корпоративные системы имитируются. Для подключения LLM задайте `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` согласно [agent/README.md](agent/README.md) и пересоздайте сервис `agent`.
 
 ```sh
 cd web && npm i && npm run dev                   # http://localhost:3000, по умолчанию на моках
-WEB_USE_MOCKS=true docker compose up --build web # демо без бэкендов
+WEB_USE_MOCKS=true docker compose up --build --no-deps web # интерфейс с моками
 ```
 
 ## Тестовые пользователи
@@ -64,6 +66,10 @@ make lint
 ```
 
 Без Make: `docker compose -p buddy-tests -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from tests`. Только юнит-тесты: `cd backend` и `go test ./...`; интеграционные проверки требуют тестовых PostgreSQL и Redis.
+
+Интерфейс: `cd web`, `npm ci`, `npm test`, `npm run lint`, `npm run build`. Агент: из `agent/` выполнить `go test ./...` (каталог `evals/` рядом с `agent/` должен быть доступен).
+
+Сквозная проверка работающего приложения реальными клиентами интерфейса: из `web/` выполнить `LIVE_API_URL=http://127.0.0.1:3000/api/v1 npx vitest run src/api/live.test.ts`. В PowerShell сначала `$env:LIVE_API_URL='http://127.0.0.1:3000/api/v1'`, затем `npx vitest run src/api/live.test.ts`. Тест использует синтетического Бориса, создаёт и отклоняет тестовые заявки, проверяет повторное подтверждение, отмену и чат. Запускать на демо-данных; тестовые записи сохраняются в истории.
 
 Не считать наличие тестов подтверждением порога 80%: фактические результаты и оставшиеся ограничения фиксируются в docs/status.md.
 

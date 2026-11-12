@@ -3,6 +3,7 @@ import type { ActionResultStatus, RequestStatus } from '@/api/schemas';
 import { Badge, type Tone } from '@/components/ui/Badge';
 
 const REQUEST: Record<RequestStatus, { label: string; tone: Tone; icon: typeof Clock3 }> = {
+  failed: { label: 'Ошибка', tone: 'danger', icon: AlertTriangle },
   pending: { label: 'На согласовании', tone: 'warn', icon: Clock3 },
   approved: { label: 'Одобрено', tone: 'ok', icon: CheckCircle2 },
   rejected: { label: 'Отклонено', tone: 'danger', icon: XCircle },
@@ -22,6 +23,7 @@ const RESULT: Record<ActionResultStatus, { label: string; tone: Tone; icon: type
   ...REQUEST,
   done: { label: 'Выполнено', tone: 'ok', icon: CheckCircle2 },
   failed: { label: 'Не выполнено', tone: 'danger', icon: AlertTriangle },
+  partial: { label: 'Частично выполнено', tone: 'warn', icon: AlertTriangle },
   cancelled: { label: 'Отменено', tone: 'neutral', icon: Ban },
 };
 

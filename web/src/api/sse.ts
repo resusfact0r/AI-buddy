@@ -1,3 +1,4 @@
+import { normalizeAgent } from './wire';
 import { AGENT_EVENT_SCHEMAS, type AgentEvent } from './schemas';
 
 export interface RawSseEvent {
@@ -77,7 +78,7 @@ export function toAgentEvent(raw: RawSseEvent): AgentEvent | null {
     console.warn('[sse] data не JSON', raw);
     return null;
   }
-  const parsed = schema.safeParse(json);
+  const parsed = schema.safeParse(normalizeAgent(raw.event, json));
   if (!parsed.success) {
     console.warn('[sse] событие не по контракту', raw.event, parsed.error.issues);
     return null;

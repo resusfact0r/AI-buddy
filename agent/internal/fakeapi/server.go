@@ -560,8 +560,15 @@ func (s *Server) createLeave(u user, r *http.Request) (any, *apiErr) {
 }
 
 func (s *Server) createAccess(u user, r *http.Request) (any, *apiErr) {
-	var in struct{ System, Reason string }
+	var in struct {
+		System     string
+		SystemCode string `json:"system_code"`
+		Reason     string
+	}
 	_ = json.NewDecoder(r.Body).Decode(&in)
+	if in.SystemCode != "" {
+		in.System = in.SystemCode
+	}
 	key := r.Header.Get("Idempotency-Key")
 	if id, ok := s.idem[key]; ok && key != "" {
 		return s.requestJSON(s.findRequest(strconv.Itoa(id))), nil

@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import '@testing-library/jest-dom/vitest';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
@@ -8,6 +9,7 @@ import { useSession } from '@/stores/session';
 import { useChat } from '@/stores/chat';
 
 mockTiming.scale = 0;
+config.useMocks = true;
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => {

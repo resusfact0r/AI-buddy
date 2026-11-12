@@ -14,7 +14,19 @@ export const agentApi = {
   confirm: (actionId: string, edited?: ConfirmParams) =>
     agentHttp(`/agent/actions/${encodeURIComponent(actionId)}/confirm`, {
       method: 'POST',
-      body: { params: edited?.params ?? null },
+      body: {
+        params:
+          !config.useMocks && edited?.type === 'leave_request'
+            ? {
+                date_from: edited.params.date_from,
+                date_to: edited.params.date_to,
+                reason_type: edited.params.leave_type,
+                comment: edited.params.comment,
+              }
+            : !config.useMocks && edited?.type === 'access_request'
+              ? { systems: edited.params.system_ids, reason: edited.params.reason }
+              : (edited?.params ?? null),
+      },
       schema: ActionResultSchema,
       timeoutMs: 30_000,
     }),

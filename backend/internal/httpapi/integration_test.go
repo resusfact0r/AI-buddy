@@ -121,6 +121,19 @@ func TestIntegration(t *testing.T) {
 	call("POST", "/chat/messages", "anna", `{"conversation_id":"c","role":"user","content":"hello","meta":{}}`, "", 201)
 	call("GET", "/chat/history?conversation_id=c", "anna", "", "", 200)
 	call("POST", "/events", "anna", `{"type":"question_asked","payload":{}}`, "", 201)
+	t.Run("chat writes do not compete with request mutations", func(t *testing.T) {
+		conn, err := db.Acquire(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Release()
+		if _, err = conn.Exec(ctx, "SELECT pg_advisory_lock(814422)"); err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Exec(ctx, "SELECT pg_advisory_unlock(814422)")
+		call("POST", "/chat/messages", "anna", `{"conversation_id":"parallel","role":"user","content":"hello"}`, "", 201)
+		call("POST", "/events", "anna", `{"type":"question_asked","payload":{}}`, "", 201)
+	})
 	from := time.Now().AddDate(0, 0, 5).Format("2006-01-02")
 	body := fmt.Sprintf(`{"date_from":%q,"date_to":%q,"reason_type":"day_off"}`, from, from)
 	key := service.ID()

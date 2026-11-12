@@ -235,7 +235,7 @@ func All() []Spec {
 			Schema:      `{"type":"object","properties":{"system":{"type":"string","minLength":1,"maxLength":64,"description":"Код системы из get_access_overview, например gitlab."},"reason":{"type":"string","minLength":3,"maxLength":500,"description":"Зачем нужен доступ."}},"required":["system","reason"],"additionalProperties":false}`,
 			Description: "ДЕЙСТВИЕ: создать запрос доступа к одной системе команды. Уходит руководителю на согласование. Выполняется только после подтверждения карточки.",
 			Run: func(ctx context.Context, c Call) (json.RawMessage, error) {
-				body := map[string]any{"system": str(c.Args, "system"), "reason": str(c.Args, "reason")}
+				body := map[string]any{"system_code": str(c.Args, "system"), "reason": str(c.Args, "reason")}
 				return c.API.Do(ctx, apiclient.Request{Method: http.MethodPost, Path: "/requests/access",
 					Token: c.Token, Body: body, IdempotencyKey: c.IdempotencyKey})
 			},

@@ -74,7 +74,7 @@ func TestToolsCallAPI(t *testing.T) {
 		{"get_request", map[string]any{"id": 12.0}, "GET", "/api/v1/requests/12", "", ""},
 		{"list_pending_approvals", nil, "GET", "/api/v1/approvals/pending", "", ""},
 		{"create_leave_request", map[string]any{"date_from": "2026-11-13", "date_to": "2026-11-13", "reason_type": "day_off"}, "POST", "/api/v1/requests/leave", "", `"date_from":"2026-11-13"`},
-		{"create_access_request", map[string]any{"system": "grafana", "reason": "нужно"}, "POST", "/api/v1/requests/access", "", `"system":"grafana"`},
+		{"create_access_request", map[string]any{"system": "grafana", "reason": "нужно"}, "POST", "/api/v1/requests/access", "", `"system_code":"grafana"`},
 		{"update_task_status", map[string]any{"task_id": "3", "status": "done"}, "PATCH", "/api/v1/onboarding/tasks/3", "", `"status":"done"`},
 		{"approve_request", map[string]any{"request_id": "9"}, "POST", "/api/v1/requests/9/approve", "", ""},
 		{"reject_request", map[string]any{"request_id": "9", "comment": "нет"}, "POST", "/api/v1/requests/9/reject", "", `"comment":"нет"`},

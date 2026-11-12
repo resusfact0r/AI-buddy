@@ -99,7 +99,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		failure(w, domain.Err(404, "not_found", "Маршрут не найден"))
 		return
 	}
-	if r.Method != "GET" || strings.HasPrefix(path, "/requests/") {
+	if (r.Method != "GET" || strings.HasPrefix(path, "/requests/")) && path != "/chat/messages" && path != "/events" {
 		conn, err := a.Store.DB.Acquire(ctx)
 		if err != nil {
 			failure(w, err)
@@ -415,7 +415,7 @@ func (a *API) search(r *http.Request, u domain.User) (any, error) {
 	return out, rows.Err()
 }
 func (a *API) history(r *http.Request, u domain.User) (any, error) {
-	rows, e := a.Store.DB.Query(r.Context(), "SELECT data FROM (SELECT id,data FROM chat_messages WHERE user_id=$1 AND conversation_id=$2 ORDER BY id DESC LIMIT $3) t ORDER BY id", u.ID, r.URL.Query().Get("conversation_id"), limit(r, 20))
+	rows, e := a.Store.DB.Query(r.Context(), "SELECT data || jsonb_build_object('id',id::text,'created_at',created_at) FROM (SELECT id,data,created_at FROM chat_messages WHERE user_id=$1 AND conversation_id=$2 ORDER BY id DESC LIMIT $3) t ORDER BY id", u.ID, r.URL.Query().Get("conversation_id"), limit(r, 20))
 	if e != nil {
 		return nil, e
 	}

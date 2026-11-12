@@ -1,3 +1,4 @@
+import { normalizeBackend, normalizeAgent } from './wire';
 import type { ZodType, ZodTypeDef } from 'zod';
 import { config } from '@/config';
 import { useSession } from '@/stores/session';
@@ -81,7 +82,13 @@ export async function request<T>(base: string, path: string, opts: RequestOption
   }
 
   const data: unknown = res.status === 204 ? null : await res.json().catch(() => null);
-  const parsed = opts.schema.safeParse(data);
+  const parsed = opts.schema.safeParse(
+    config.useMocks
+      ? data
+      : !path.startsWith('/agent/')
+        ? normalizeBackend(path, data)
+        : normalizeAgent(path.endsWith('/suggestions') ? 'suggestions' : 'action_result', data),
+  );
   if (!parsed.success) {
     console.error('[api] Ответ не соответствует контракту', path, parsed.error.issues);
     throw new ApiError({

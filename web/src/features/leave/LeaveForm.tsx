@@ -1,3 +1,4 @@
+import { config } from '@/config';
 import { useState, type FormEvent } from 'react';
 import {
   LEAVE_TYPE_LABEL,
@@ -59,6 +60,10 @@ export function LeaveForm({
       setErrors(r.errors);
       return;
     }
+    if (!config.useMocks && r.data.date_from <= todayIso()) {
+      setErrors({ date_from: 'Выберите дату в будущем' });
+      return;
+    }
     setErrors({});
     onSubmit(r.data);
   };
@@ -94,11 +99,13 @@ export function LeaveForm({
           value={values.leave_type}
           onChange={(e) => set('leave_type', LeaveTypeSchema.parse(e.target.value))}
         >
-          {LeaveTypeSchema.options.map((t) => (
-            <option key={t} value={t}>
-              {LEAVE_TYPE_LABEL[t]}
-            </option>
-          ))}
+          {LeaveTypeSchema.options
+            .filter((t) => config.useMocks || t !== 'sick_leave')
+            .map((t) => (
+              <option key={t} value={t}>
+                {LEAVE_TYPE_LABEL[t]}
+              </option>
+            ))}
         </select>
       </Field>
       <Field label="Комментарий (необязательно)" error={shown.comment}>

@@ -104,6 +104,14 @@ func (c *Client) Do(ctx context.Context, r Request) (json.RawMessage, error) {
 		if len(bytes.TrimSpace(data)) == 0 {
 			return json.RawMessage(`{}`), nil
 		}
+
+		var wire any
+		if json.Unmarshal(data, &wire) == nil {
+			wire = normalizeWire(wire)
+			if normalized, err := json.Marshal(wire); err == nil {
+				return normalized, nil
+			}
+		}
 		return data, nil
 	}
 	return nil, parseError(resp.StatusCode, data)
@@ -195,4 +203,23 @@ func (c *Client) LogEvent(ctx context.Context, token, typ string, payload map[st
 // Me возвращает текущего пользователя (GET /auth/me).
 func (c *Client) Me(ctx context.Context, token string) (json.RawMessage, error) {
 	return c.Get(ctx, token, "/auth/me", nil)
+}
+
+func normalizeWire(value any) any {
+	switch v := value.(type) {
+	case []any:
+		for i := range v {
+			v[i] = normalizeWire(v[i])
+		}
+	case map[string]any:
+		if code, ok := v["system_code"]; ok {
+			if _, exists := v["system"]; !exists {
+				v["system"] = code
+			}
+		}
+		for k, x := range v {
+			v[k] = normalizeWire(x)
+		}
+	}
+	return value
 }
