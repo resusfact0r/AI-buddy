@@ -57,5 +57,18 @@ services:
       interval: 5s
       timeout: 2s
       retries: 10
+  web:
+    build: ./web
+    environment:
+      # Адреса, по которым к API ходит браузер, а не сеть Compose
+      API_URL: ${WEB_API_URL:-http://localhost:8080/api/v1}
+      AGENT_URL: ${WEB_AGENT_URL:-http://localhost:8081/api/v1}
+      USE_MOCKS: ${WEB_USE_MOCKS:-false}
+    ports: ['127.0.0.1:3000:3000']
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:3000/healthz']
+      interval: 5s
+      timeout: 2s
+      retries: 10
 volumes:
   pgdata:
