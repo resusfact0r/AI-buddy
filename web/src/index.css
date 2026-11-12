@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-white shadow-card;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-muted
+      transition-colors hover:border-ink-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20
+      disabled:cursor-not-allowed disabled:bg-canvas aria-[invalid=true]:border-danger;
+  }
+  .prose-chat {
+    @apply text-[15px] leading-relaxed;
+  }
+  .prose-chat p {
+    @apply my-1.5;
+  }
+  .prose-chat p:first-child {
+    @apply mt-0;
+  }
+  .prose-chat p:last-child {
+    @apply mb-0;
+  }
+  .prose-chat ul {
+    @apply my-2 list-disc space-y-1 pl-5;
+  }
+  .prose-chat ol {
+    @apply my-2 list-decimal space-y-1 pl-5;
+  }
+  .prose-chat strong {
+    @apply font-semibold;
+  }
+  .prose-chat a {
+    @apply text-brand underline-offset-2 hover:underline;
+  }
+  .prose-chat code {
+    @apply rounded bg-canvas px-1 py-0.5 text-[13px];
+  }
+  .prose-chat h1 {
+    @apply mb-3 text-2xl font-bold;
+  }
+  .prose-chat h2 {
+    @apply mb-2 mt-4 text-lg font-bold;
+  }
+  .prose-chat hr {
+    @apply my-4 border-line;
+  }
+  .typing-dot {
+    animation: pulse3 1.2s infinite ease-in-out both;
+  }
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

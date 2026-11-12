@@ -19,6 +19,15 @@ PowerShell: `Copy-Item .env.example .env`. Миграции применяет �
 
 API: http://127.0.0.1:8080/api/v1. Corp-mock: http://127.0.0.1:8090. Внутри сети Compose коллеги используют `http://api:8080/api/v1`. Авторизация: `Authorization: Bearer <access_token>`. Для создания заявки требуется уникальный `Idempotency-Key`.
 
+## Веб-интерфейс
+
+Фронтенд — в `web/` (React 18 + TypeScript, Vite), подробности в [web/README.md](web/README.md). В Compose это сервис `web` на http://127.0.0.1:3000.
+
+```sh
+cd web && npm i && npm run dev                   # http://localhost:3000, по умолчанию на моках
+WEB_USE_MOCKS=true docker compose up --build web # демо без бэкендов
+```
+
 ## Тестовые пользователи
 
 Пароль каждого: `test1234`.
