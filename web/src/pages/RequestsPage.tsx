@@ -42,7 +42,7 @@ function Segmented<T extends string>({
   onChange: (v: T | '') => void;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1 rounded-2xl bg-line/60 p-1">
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1 rounded-full bg-line p-1">
       {options.map((o) => (
         <button
           key={o.value || 'all'}
@@ -51,8 +51,8 @@ function Segmented<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors',
-            value === o.value ? 'bg-white text-ink shadow-card' : 'text-ink-soft hover:text-ink',
+            'rounded-full px-4 py-2 text-sm font-bold transition-colors',
+            value === o.value ? 'bg-ink text-white' : 'text-ink hover:bg-white/60',
           )}
         >
           {o.label}
@@ -69,19 +69,19 @@ function RequestRow({ r, onOpen }: { r: WorkRequest; onOpen: () => void }) {
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-canvas/60"
+        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-canvas/70 sm:px-6"
       >
         <span
           className={cn(
             'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
-            r.type === 'leave' ? 'bg-brand-soft text-brand' : 'bg-violet-soft text-violet',
+            r.type === 'leave' ? 'bg-brand-soft text-ink' : 'bg-violet-soft text-ink',
           )}
           aria-hidden
         >
           <Icon className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold">{requestTitle(r)}</span>
+          <span className="block text-[17px] font-bold">{requestTitle(r)}</span>
           <span className="block text-sm text-ink-soft">
             {r.type === 'leave' ? requestSubject(r) : (r.access.reason ?? '')}
           </span>
@@ -92,7 +92,7 @@ function RequestRow({ r, onOpen }: { r: WorkRequest; onOpen: () => void }) {
           {formatDateTime(r.created_at)}
         </span>
         <RequestStatusBadge status={r.status} />
-        <ChevronRight className="h-4 w-4 text-ink-muted" aria-hidden />
+        <ChevronRight className="h-5 w-5 text-ink" aria-hidden />
       </button>
     </li>
   );
@@ -113,32 +113,32 @@ function RequestDetails({ id, onClose }: { id: string; onClose: () => void }) {
       ) : (
         <dl className="space-y-3 text-[15px]">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-ink-muted">Статус</dt>
+            <dt className="text-ink-soft">Статус</dt>
             <dd>
               <RequestStatusBadge status={q.data.status} />
             </dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-ink-muted">Тип</dt>
-            <dd className="font-medium">{requestTitle(q.data)}</dd>
+            <dt className="text-ink-soft">Тип</dt>
+            <dd className="font-bold">{requestTitle(q.data)}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-ink-muted">{q.data.type === 'leave' ? 'Даты' : 'Система'}</dt>
-            <dd className="text-right font-medium">{requestSubject(q.data)}</dd>
+            <dt className="text-ink-soft">{q.data.type === 'leave' ? 'Даты' : 'Система'}</dt>
+            <dd className="text-right font-bold">{requestSubject(q.data)}</dd>
           </div>
           {requestReason(q.data) && (
             <div className="flex justify-between gap-3">
-              <dt className="text-ink-muted">{q.data.type === 'leave' ? 'Комментарий' : 'Зачем'}</dt>
+              <dt className="text-ink-soft">{q.data.type === 'leave' ? 'Комментарий' : 'Зачем'}</dt>
               <dd className="text-right">{requestReason(q.data)}</dd>
             </div>
           )}
           <div className="flex justify-between gap-3">
-            <dt className="text-ink-muted">Создана</dt>
+            <dt className="text-ink-soft">Создана</dt>
             <dd>{formatDateTime(q.data.created_at)}</dd>
           </div>
           {q.data.decided_by && (
             <div className="rounded-2xl bg-canvas p-4">
-              <dt className="text-sm font-semibold">
+              <dt className="text-sm font-bold">
                 {q.data.status === 'approved' ? 'Одобрил(а)' : 'Отклонил(а)'}:{' '}
                 {q.data.decided_by.display_name}
                 {q.data.decided_at && (
@@ -171,7 +171,7 @@ function LeaveDialog({ onClose }: { onClose: () => void }) {
       description="Заявка уйдёт руководителю на согласование."
     >
       {err && err.kind !== 'validation' && (
-        <p role="alert" className="mb-3 rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger">
+        <p role="alert" className="mb-3 rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger-strong">
           {err.message}
         </p>
       )}
@@ -211,8 +211,10 @@ export function RequestsPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight">Мои заявки</h1>
-          <p className="text-ink-soft">Отгулы и доступы. Статус обновляется автоматически.</p>
+          <h1 className="page-title">Мои заявки</h1>
+          <p className="mt-1 text-lg font-medium text-ink-soft">
+            Отгулы и доступы. Статус обновляется автоматически.
+          </p>
         </div>
         <Button onClick={() => setLeaveOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden /> Оформить отгул вручную

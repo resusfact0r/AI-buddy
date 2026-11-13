@@ -1,5 +1,9 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Токены в стилистике Авито: чёрный текст, белые поверхности на тёплом сером фоне,
+ * яркие акценты (голубой, зелёный, фиолетовый, красный) и их пастельные пары для плашек.
+ */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
@@ -8,19 +12,19 @@ export default {
         sans: ['"Manrope Variable"', 'Manrope', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       colors: {
-        ink: { DEFAULT: '#1A1A1A', soft: '#5C5C5C', muted: '#8F8F8F' },
-        canvas: '#F2F3F5',
-        line: '#E4E5E8',
-        brand: { DEFAULT: '#0099F7', soft: '#E5F4FF', strong: '#007ACC' },
-        ok: { DEFAULT: '#02A35C', soft: '#E3F7EC' },
-        warn: { DEFAULT: '#E58A00', soft: '#FFF3DE' },
-        danger: { DEFAULT: '#E5334B', soft: '#FDE8EB' },
-        violet: { DEFAULT: '#965EEB', soft: '#F1E9FD' },
+        ink: { DEFAULT: '#0A0A0A', soft: '#5E6673', muted: '#757C86' },
+        canvas: '#F2F1F0',
+        line: '#E3E2E0',
+        brand: { DEFAULT: '#00AAFF', soft: '#BADAFB', strong: '#0072C6' },
+        ok: { DEFAULT: '#04E061', soft: '#C9FFBF', strong: '#00792F' },
+        warn: { DEFAULT: '#FFB021', soft: '#FFE8A6', strong: '#7A4D00' },
+        danger: { DEFAULT: '#FF4053', soft: '#F7C1C5', strong: '#B80F24' },
+        violet: { DEFAULT: '#965EEB', soft: '#DFCDF3', strong: '#5A2BB3' },
       },
-      borderRadius: { xl: '14px', '2xl': '20px', '3xl': '28px' },
+      borderRadius: { xl: '12px', '2xl': '16px', '3xl': '24px' },
       boxShadow: {
-        card: '0 1px 2px rgba(16,24,40,.04), 0 2px 8px rgba(16,24,40,.04)',
-        pop: '0 8px 32px rgba(16,24,40,.14)',
+        card: '0 0 0 1px rgba(10,10,10,.04)',
+        pop: '0 12px 40px rgba(10,10,10,.16)',
       },
       keyframes: {
         'fade-up': { from: { opacity: '0', transform: 'translateY(6px)' }, to: { opacity: '1', transform: 'none' } },

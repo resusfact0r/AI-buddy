@@ -1,11 +1,6 @@
 import { cn } from '@/lib/cn';
 
-const palette = [
-  'bg-brand-soft text-brand-strong',
-  'bg-violet-soft text-violet',
-  'bg-ok-soft text-ok',
-  'bg-warn-soft text-warn',
-];
+const palette = ['bg-brand-soft', 'bg-violet-soft', 'bg-ok-soft', 'bg-danger-soft'];
 
 export function Avatar({ name, className }: { name: string; className?: string }) {
   const initials = name
@@ -19,7 +14,7 @@ export function Avatar({ name, className }: { name: string; className?: string }
     <span
       aria-hidden
       className={cn(
-        'grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-bold',
+        'grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-extrabold text-ink',
         color,
         className,
       )}

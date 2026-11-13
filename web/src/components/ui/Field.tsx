@@ -27,17 +27,17 @@ export function Field({
     : children;
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-ink-soft">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-bold text-ink">
         {label}
       </label>
       {control}
       {hint && !error && (
-        <p id={hintId} className="mt-1 text-xs text-ink-muted">
+        <p id={hintId} className="mt-1 text-xs font-medium text-ink-soft">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errId} role="alert" className="mt-1 text-xs font-medium text-danger">
+        <p id={errId} role="alert" className="mt-1 text-xs font-bold text-danger-strong">
           {error}
         </p>
       )}

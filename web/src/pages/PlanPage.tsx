@@ -26,7 +26,7 @@ function TaskRow({ task }: { task: Task }) {
   };
 
   return (
-    <li className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-start">
+    <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <input
           id={checkboxId}
@@ -40,9 +40,9 @@ function TaskRow({ task }: { task: Task }) {
         <label
           htmlFor={checkboxId}
           className={cn(
-            'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2',
-            done ? 'border-ok bg-ok text-white' : 'border-line bg-white',
-            locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-ok',
+            'mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2',
+            done ? 'border-ok bg-ok text-ink' : 'border-ink/25 bg-white',
+            locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-ink',
           )}
         >
           {done ? (
@@ -55,7 +55,7 @@ function TaskRow({ task }: { task: Task }) {
           </span>
         </label>
         <div className="min-w-0">
-          <p className={cn('font-semibold leading-snug', done && 'text-ink-soft line-through')}>
+          <p className={cn('text-[17px] font-bold leading-snug', done && 'text-ink-soft line-through')}>
             {task.title}
           </p>
           {task.description && <p className="mt-0.5 text-sm text-ink-soft">{task.description}</p>}
@@ -72,7 +72,7 @@ function TaskRow({ task }: { task: Task }) {
             >
               <Lock className="h-3.5 w-3.5" aria-hidden />
               {AUTO_TASK_HINT}.
-              <Link to="/access" className="font-semibold text-brand hover:underline">
+              <Link to="/access" className="font-bold text-ink underline underline-offset-2">
                 Мои доступы →
               </Link>
             </p>
@@ -95,7 +95,7 @@ function TaskRow({ task }: { task: Task }) {
           onClick={ask}
           aria-label={`Спросить AI-buddy про задачу «${task.title}»`}
         >
-          <Sparkles className="h-4 w-4 text-brand" aria-hidden /> Спросить AI-buddy
+          <Sparkles className="h-4 w-4" aria-hidden /> Спросить AI-buddy
         </Button>
       </div>
     </li>
@@ -110,30 +110,30 @@ function StageItem({ stage, index, onlyRequired }: { stage: Stage; index: number
   return (
     <Accordion.Item value={stage.id} className="card overflow-hidden">
       <Accordion.Header>
-        <Accordion.Trigger className="group flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-canvas/50">
+        <Accordion.Trigger className="group flex w-full items-center gap-4 px-5 py-5 text-left sm:px-6">
           <span
             className={cn(
-              'grid h-9 w-9 shrink-0 place-items-center rounded-xl font-bold',
-              complete ? 'bg-ok text-white' : 'bg-brand-soft text-brand-strong',
+              'grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-extrabold',
+              complete ? 'bg-ok text-ink' : 'bg-ink text-white',
             )}
             aria-hidden
           >
             {complete ? <Check className="h-5 w-5" strokeWidth={3} /> : index + 1}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-bold leading-tight">{stage.title}</span>
+            <span className="block text-xl font-extrabold leading-tight">{stage.title}</span>
             {stage.description && <span className="block text-sm text-ink-soft">{stage.description}</span>}
           </span>
-          <span className="text-sm font-semibold tabular-nums text-ink-soft">
+          <span className="rounded-md bg-canvas px-2 py-1 text-sm font-bold tabular-nums">
             {done}/{required.length}
           </span>
           <ChevronDown
-            className="h-5 w-5 text-ink-muted transition-transform group-data-[state=open]:rotate-180"
+            className="h-5 w-5 text-ink transition-transform group-data-[state=open]:rotate-180"
             aria-hidden
           />
         </Accordion.Trigger>
       </Accordion.Header>
-      <Accordion.Content className="border-t border-line px-5">
+      <Accordion.Content className="border-t border-line px-5 sm:px-6">
         {tasks.length === 0 ? (
           <p className="py-4 text-sm text-ink-muted">Нет задач по фильтру.</p>
         ) : (
@@ -162,15 +162,15 @@ export function PlanPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight">План адаптации</h1>
+          <h1 className="page-title">План адаптации</h1>
           {progress.data && (
-            <p className="text-ink-soft">
+            <p className="mt-1 text-lg font-medium text-ink-soft">
               Выполнено <b className="text-ink">{progress.data.percent}%</b> — {progress.data.done_tasks} из{' '}
               {progress.data.total_tasks} обязательных задач
             </p>
           )}
         </div>
-        <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold">
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm font-bold">
           <input
             type="checkbox"
             role="switch"
@@ -180,7 +180,7 @@ export function PlanPage() {
           />
           <span
             aria-hidden
-            className="relative h-6 w-10 rounded-full bg-line transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-brand peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2"
+            className="relative h-6 w-10 rounded-full bg-ink/20 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-ink peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2"
           />
           Только обязательные
         </label>

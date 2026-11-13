@@ -73,25 +73,26 @@ export function LoginPage() {
   const pendingUser = m.isPending ? m.variables?.username : null;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(1200px_600px_at_10%_-10%,#D9F0FF_0%,transparent_60%),radial-gradient(900px_500px_at_110%_110%,#EFE5FF_0%,transparent_55%)] px-4 py-10">
-      <div className="w-full max-w-[440px]">
-        <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <Logo size="lg" />
-          </div>
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
-            Наставник, который всегда рядом
+    <div className="flex min-h-dvh flex-col bg-canvas">
+      <div className="mx-auto grid w-full max-w-[1160px] flex-1 items-center gap-10 px-4 py-10 lg:grid-cols-[1.1fr_minmax(0,460px)] lg:gap-16 lg:px-8">
+        <div>
+          <Logo size="lg" />
+          <h1 className="mt-8 text-[40px] font-extrabold leading-[1.15] tracking-tight sm:text-[56px] lg:mt-12">
+            <span className="mark mark-green">Наставник,</span>
+            <br />
+            <span className="mark mark-blue mt-1">который всегда рядом</span>
           </h1>
-          <p className="mt-2 text-ink-soft">
+          <p className="mt-6 max-w-md text-lg font-medium text-ink-soft sm:text-xl">
             Подскажет, что делать дальше, оформит отгул и запросит доступы.
           </p>
         </div>
 
         <div className="card p-6 sm:p-8">
+          <h2 className="mb-5 text-2xl font-extrabold">Вход</h2>
           {reason === 'expired' && (
             <div
               role="status"
-              className="mb-4 flex items-center gap-2 rounded-xl bg-warn-soft px-3 py-2.5 text-sm text-warn"
+              className="mb-4 flex items-center gap-2 rounded-xl bg-warn-soft px-3.5 py-3 text-sm font-semibold text-ink"
             >
               <Info className="h-4 w-4 shrink-0" aria-hidden />
               Сессия истекла — войдите снова.
@@ -119,7 +120,7 @@ export function LoginPage() {
             {err && (
               <p
                 role="alert"
-                className="rounded-xl bg-danger-soft px-3 py-2.5 text-sm font-medium text-danger"
+                className="rounded-xl bg-danger-soft px-3.5 py-3 text-sm font-semibold text-ink"
               >
                 {err.kind === 'unauthorized' ? 'Неверный логин или пароль' : err.message}
               </p>
@@ -129,11 +130,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            <span className="h-px flex-1 bg-line" />
-            Быстрый вход для демо
-            <span className="h-px flex-1 bg-line" />
-          </div>
+          <p className="eyebrow mb-3 mt-8">Быстрый вход для демо</p>
           <ul className="space-y-2">
             {QUICK.map((q) => (
               <li key={q.username}>
@@ -141,15 +138,15 @@ export function LoginPage() {
                   type="button"
                   onClick={() => quick(q.username)}
                   disabled={m.isPending}
-                  className="group flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left transition-colors hover:border-brand hover:bg-brand-soft/40 disabled:opacity-60"
+                  className="group flex w-full items-center gap-3 rounded-2xl bg-canvas px-3.5 py-3 text-left transition-colors hover:bg-line disabled:opacity-60"
                 >
-                  <Avatar name={q.name} className="h-9 w-9" />
+                  <Avatar name={q.name} />
                   <span className="flex-1">
-                    <span className="block font-semibold">Войти как {q.name}</span>
-                    <span className="block text-xs text-ink-muted">{q.hint}</span>
+                    <span className="block font-bold">Войти как {q.name}</span>
+                    <span className="block text-sm text-ink-soft">{q.hint}</span>
                   </span>
                   <ArrowRight
-                    className="h-4 w-4 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-brand"
+                    className="h-5 w-5 text-ink transition-transform group-hover:translate-x-1"
                     aria-hidden
                   />
                 </button>
@@ -157,8 +154,8 @@ export function LoginPage() {
             ))}
           </ul>
         </div>
-        <p className="mt-6 text-center text-xs text-ink-muted">Демо-версия, тестовые данные</p>
       </div>
+      <p className="pb-6 text-center text-xs font-medium text-ink-muted">Демо-версия, тестовые данные</p>
     </div>
   );
 }

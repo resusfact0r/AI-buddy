@@ -28,8 +28,8 @@ export function SplitLayout({ panel, panelLabel }: { panel: React.ReactNode; pan
       aria-controls={`pane-${id}`}
       onClick={() => setTab(id)}
       className={cn(
-        'flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition-colors',
-        tab === id ? 'bg-white text-ink shadow-card' : 'text-ink-soft',
+        'flex-1 rounded-full px-3 py-2.5 text-sm font-bold transition-colors',
+        tab === id ? 'bg-ink text-white' : 'text-ink',
       )}
     >
       {label}
@@ -41,17 +41,17 @@ export function SplitLayout({ panel, panelLabel }: { panel: React.ReactNode; pan
       <div
         role="tablist"
         aria-label="Разделы главной"
-        className="mb-4 flex gap-1 rounded-2xl bg-line/60 p-1 lg:hidden"
+        className="mb-4 flex gap-1 rounded-full bg-line p-1 lg:hidden"
       >
         {tabBtn('panel', panelLabel)}
         {tabBtn('chat', 'AI-buddy')}
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <div id="pane-panel" className={cn('min-w-0 space-y-4', tab !== 'panel' && 'hidden lg:block')}>
           {panel}
         </div>
         <div id="pane-chat" className={cn('min-w-0', tab !== 'chat' && 'hidden lg:block')}>
-          <ChatPanel className="h-[calc(100dvh-12rem)] min-h-[520px] lg:sticky lg:top-[5.5rem] lg:h-[calc(100dvh-7.5rem)]" />
+          <ChatPanel className="h-[calc(100dvh-12rem)] min-h-[520px] lg:sticky lg:top-[6.25rem] lg:h-[calc(100dvh-8.25rem)]" />
         </div>
       </div>
     </>
