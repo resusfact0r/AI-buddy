@@ -461,11 +461,13 @@ func (t *turn) nextSteps() Response {
 	var b strings.Builder
 	if _, bad := isErr(prog); !bad {
 		p := jsonx.Object(jsonx.Parse([]byte(prog)))
-		stage := jsonx.Str(jsonx.Get(p, "current_stage"), "title")
+		stage := t.req.User.Stage
 		if stage == "" {
-			stage = jsonx.Str(p, "current_stage")
+			stage = jsonx.Str(jsonx.Get(p, "current_stage"), "title")
 		}
-		if stage != "" {
+		if stage == "" {
+			fmt.Fprintf(&b, "Общий прогресс адаптации — %d%%.\n\n", jsonx.Int(p, "percent", "total_percent"))
+		} else {
 			fmt.Fprintf(&b, "Ты на этапе «%s», общий прогресс адаптации — %d%%.\n\n", stage, jsonx.Int(p, "percent", "total_percent"))
 		}
 	}
@@ -557,7 +559,7 @@ func (t *turn) taskDone() Response {
 
 func (t *turn) approvals() Response {
 	if _, ok := t.result("approve_request"); ok {
-		return say("Подтверди карточки, чтобы одобрить заявки. Чтобы отклонить — отмени карточку и напиши, например, «отклони заявку 101, причина…».")
+		return say("Подтверди карточки, чтобы одобрить заявки. Чтобы отклонить — отмени карточку и напиши «отклони заявку <номер>, причина…».")
 	}
 	if !t.has("list_pending_approvals") {
 		return say("Согласовывать заявки может только руководитель команды.")
@@ -577,8 +579,7 @@ func (t *turn) approvals() Response {
 	fmt.Fprintf(&b, "На согласовании заявок: %d.\n", len(items))
 	var calls []ToolCall
 	for i, it := range items {
-		who := jsonx.Str(jsonx.Get(it, "user"), "full_name")
-		fmt.Fprintf(&b, "- №%s: %s — %s\n", jsonx.Str(it, "id"), requestTitle(it), orDefault(who, "сотрудник команды"))
+		fmt.Fprintf(&b, "- №%s: %s — %s\n", ShortID(jsonx.Str(it, "id")), requestTitle(it), RequestAuthor(it))
 		if i < 6 {
 			calls = append(calls, t.call("approve_request", map[string]any{"request_id": jsonx.Str(it, "id")}))
 		}
@@ -586,6 +587,30 @@ func (t *turn) approvals() Response {
 	b.WriteString("\n")
 	return Response{Content: b.String(), ToolCalls: calls}
 }
+
+// ShortID сокращает длинный идентификатор заявки до читаемого номера.
+func ShortID(id string) string {
+	if len(id) >= 32 { // хеш-идентификаторы; короткие осмысленные номера не трогаем
+		return id[:8]
+	}
+	return id
+}
+
+// RequestAuthor возвращает имя автора заявки; если API отдаёт только идентификатор — его.
+func RequestAuthor(r jsonx.Obj) string {
+	for _, name := range []string{
+		jsonx.Str(jsonx.Get(r, "user"), "full_name", "display_name"),
+		jsonx.Str(jsonx.Get(r, "author"), "full_name", "display_name"),
+		jsonx.Str(r, "user_name", "user_id"),
+	} {
+		if name != "" {
+			return name
+		}
+	}
+	return "сотрудник команды"
+}
+
+var reRequestRef = regexp.MustCompile(`заявк\S*\s+(?:№\s*|номер\s+)?([0-9a-z][0-9a-z_-]*)`)
 
 func (t *turn) decision(tool string) Response {
 	if body, ok := t.result(tool); ok {
@@ -602,15 +627,33 @@ func (t *turn) decision(tool string) Response {
 		}
 		return say("Не могу: одобрять и отклонять заявки может только руководитель команды, у тебя таких прав нет. Твои заявки согласует " + who + " — могу проверить их статус.")
 	}
-	id := reNumber.FindString(t.low)
-	if id == "" {
+	ref := reRequestRef.FindStringSubmatch(t.low)
+	if ref == nil {
 		return t.approvals()
+	}
+	// Номер в сообщении может быть сокращённым — сверяем со списком ожидающих заявок.
+	body, ok := t.result("list_pending_approvals")
+	if !ok {
+		return Response{ToolCalls: []ToolCall{t.call("list_pending_approvals", nil)}}
+	}
+	if _, bad := isErr(body); bad {
+		return errorReply(body)
+	}
+	id := ""
+	for _, it := range jsonx.Items(jsonx.Parse([]byte(body))) {
+		if full := jsonx.Str(it, "id"); full == ref[1] || (len(ref[1]) >= 4 && strings.HasPrefix(full, ref[1])) {
+			id = full
+			break
+		}
+	}
+	if id == "" {
+		return say("Не нашёл заявку «" + ref[1] + "» среди ожидающих твоего решения. Спроси «Что мне согласовать?» — покажу актуальный список.")
 	}
 	args := map[string]any{"request_id": id}
 	if tool == "reject_request" {
 		comment := "Отклонено руководителем"
-		if i := strings.Index(t.low, id); i >= 0 {
-			if rest := strings.Trim(t.user[strings.Index(t.user, id)+len(id):], " ,.:;—-"); rest != "" {
+		if i := strings.Index(strings.ToLower(t.user), ref[1]); i >= 0 {
+			if rest := strings.Trim(t.user[i+len(ref[1]):], " ,.:;—-"); rest != "" {
 				comment = rest
 			}
 		}
@@ -732,7 +775,7 @@ func (t *turn) knowledge() Response {
 
 // summarize убирает пометку «Тестовая инструкция.» и обрезает текст по границе предложения.
 func summarize(body string, max int) string {
-	body = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(body), "Тестовая инструкция."))
+	body = strings.TrimSpace(reTestNote.ReplaceAllString(strings.TrimSpace(body), ""))
 	r := []rune(body)
 	if len(r) <= max {
 		return body
@@ -743,6 +786,9 @@ func summarize(body string, max int) string {
 	}
 	return cut + "…"
 }
+
+// reTestNote — вводная пометка статьи («Тестовая инструкция, не регламент…»): агент и так говорит «по тестовой инструкции».
+var reTestNote = regexp.MustCompile(`^Тестовая инструкция[^.]*\.\s*`)
 
 var stop = map[string]bool{}
 

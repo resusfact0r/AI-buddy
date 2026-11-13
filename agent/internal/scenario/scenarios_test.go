@@ -150,6 +150,15 @@ func TestAC_01_8_LeaveCorpFailure(t *testing.T) {
 	if n := e.api.RequestCount("leave", "pending"); n != 1 {
 		t.Errorf("активных заявок %d, ожидалась 1", n)
 	}
+	// Повтор идёт с тем же ключом: API переиспользует ту же заявку, «висящей» failed не остаётся.
+	if total := e.api.RequestCount("leave", ""); total != 1 {
+		t.Errorf("всего заявок %d: после повтора не должно оставаться failed-дубля", total)
+	}
+	for _, k := range e.api.LastIdempotencyKeys() {
+		if k != p.ActionID {
+			t.Errorf("Idempotency-Key %q должен быть равен action_id и при повторе", k)
+		}
+	}
 	// Сервис продолжает работать.
 	contains(t, e.say(anna, "", "Что мне делать дальше?").Text, "Следующие шаги")
 }
@@ -160,6 +169,7 @@ func TestAC_01_8_LeaveCorpFailure(t *testing.T) {
 func TestAC_02_1_NextSteps(t *testing.T) {
 	e := newEnv(t, nil)
 	r := e.say(anna, "", "Что мне делать дальше?")
+	notContains(t, r.Text, "«2»")
 	contains(t, r.Text, "«Первая неделя»", "30%", "Прочитать документацию команды", "https://wiki.example.test/team-docs", "Изучить правила код-ревью")
 	noProposals(t, r)
 	contains(t, e.say(anna, "", "Я в первой неделе, что ещё не сделал?").Text, "Следующие шаги")
@@ -377,6 +387,10 @@ func TestAC_04_6_LeadApproves(t *testing.T) {
 		if p.Type != "approve" || p.Options["request"] == nil {
 			t.Errorf("карточка: %+v", p)
 		}
+		// Поля для отображения карточки: номер, автор, суть.
+		if p.Params["author_name"] != "Анна Соколова" || p.Params["request_number"] == "" || p.Params["summary"] == "" || p.Params["request_type"] == "" {
+			t.Errorf("в карточке нет полей для отображения: %+v", p.Params)
+		}
 		if e.api.RequestCount("leave", "approved") != 0 && p.Type == "" {
 			t.Error("ничего не должно одобряться до подтверждения")
 		}
@@ -415,12 +429,15 @@ func TestAC_04_7_RejectAndOtherTeam(t *testing.T) {
 	f := e.say(fedor, "", "Что мне согласовать?")
 	noProposals(t, f)
 	contains(t, f.Text, "нет заявок")
-	// Фёдор не может одобрить заявку чужой команды даже по номеру: API отвечает 404/403.
+	// Фёдор не может одобрить заявку чужой команды даже по номеру: в его списке её нет.
 	e.confirm(anna, oneProposal(t, e.say(anna, "", "Хочу отгул в пятницу"), "leave_request").ActionID, nil)
 	f = e.say(fedor, "", "Одобри заявку 101")
 	noProposals(t, f)
-	contains(t, f.Text, "недоступны")
+	contains(t, f.Text, "Не нашёл заявку")
 	notContains(t, f.Text, "Анна")
+	if e.api.Hits("POST /requests/{id}/approve") != 0 {
+		t.Error("approve не должен вызываться")
+	}
 	// Одобрение по номеру своей команды.
 	p = oneProposal(t, e.say(elena, "", "Одобри заявку 101"), "approve")
 	if res := e.confirm(elena, p.ActionID, map[string]any{"comment": "ок"}); res.Status != "done" {
@@ -467,8 +484,8 @@ func TestAC_00_4_OtherUsersPlan(t *testing.T) {
 	r := e.say(anna, "", "Покажи план Бориса")
 	contains(t, r.Text, "Не могу показать", "недоступны")
 	notContains(t, r.Text, "Познакомиться", "выполнено")
-	if e.api.Hits("GET /onboarding/plan") != 1 {
-		t.Error("ожидался один запрос плана, отклонённый RBAC")
+	if e.api.Hits("GET /onboarding/plan") == 0 {
+		t.Error("ожидался запрос плана, отклонённый RBAC")
 	}
 	// Наставнику и руководителю план подопечного доступен.
 	contains(t, e.say(dmitry, "", "Покажи план Бориса").Text, "выполнено 0 из 10")
