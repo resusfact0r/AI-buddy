@@ -258,7 +258,8 @@ func (s *Server) Handler() http.Handler {
 				items = append(items, s.taskJSON(target, t))
 			}
 		}
-		return map[string]any{"items": items}, nil
+		// Как в настоящем API: объект с полем tasks.
+		return map[string]any{"tasks": items}, nil
 	})
 	route("PATCH /onboarding/tasks/{id}", func(u user, r *http.Request) (any, *apiErr) {
 		if u.Role != "intern" {
@@ -489,11 +490,12 @@ func (s *Server) progress(uid int) map[string]any {
 			}
 		}
 		total, done = total+st, done+sd
-		stages = append(stages, map[string]any{"id": i + 1, "title": title, "percent": sd * 100 / st})
+		_ = title
+		stages = append(stages, map[string]any{"stage_id": strconv.Itoa(i + 1), "percent": sd * 100 / st})
 	}
-	cur := s.currentStage(uid)
+	// Как в настоящем API: current_stage — идентификатор этапа, названия есть только в плане.
 	return map[string]any{"percent": done * 100 / total, "stages": stages,
-		"current_stage": map[string]any{"id": cur, "title": stageTitles[cur-1]}}
+		"current_stage": strconv.Itoa(s.currentStage(uid))}
 }
 
 func (s *Server) corpFails(r *http.Request) bool {
@@ -519,7 +521,15 @@ func (s *Server) createLeave(u user, r *http.Request) (any, *apiErr) {
 	_ = json.NewDecoder(r.Body).Decode(&in)
 	key := r.Header.Get("Idempotency-Key")
 	if id, ok := s.idem[key]; ok && key != "" {
-		return s.requestJSON(s.findRequest(strconv.Itoa(id))), nil
+		prev := s.findRequest(strconv.Itoa(id))
+		if prev.Status == "failed" {
+			// Как в настоящем API: повтор с тем же ключом повторяет отправку той же заявки.
+			if s.corpFails(r) {
+				return nil, errUpstream
+			}
+			prev.Status = "pending"
+		}
+		return s.requestJSON(prev), nil
 	}
 	from, e1 := time.Parse("2006-01-02", in.DateFrom)
 	to, e2 := time.Parse("2006-01-02", in.DateTo)
@@ -550,6 +560,9 @@ func (s *Server) createLeave(u user, r *http.Request) (any, *apiErr) {
 	if s.corpFails(r) {
 		rq.Status = "failed"
 		s.requests = append(s.requests, rq)
+		if key != "" {
+			s.idem[key] = rq.ID
+		}
 		return nil, errUpstream
 	}
 	s.requests = append(s.requests, rq)

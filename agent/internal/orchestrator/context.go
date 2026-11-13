@@ -85,11 +85,21 @@ func (o *Orchestrator) userContext(ctx context.Context, sess mcpclient.Session, 
 	}
 	if !progress.IsError {
 		p := jsonx.Object(jsonx.Parse([]byte(progress.Text)))
-		uc.Stage = jsonx.Str(jsonx.Get(p, "current_stage"), "title")
-		if uc.Stage == "" {
-			uc.Stage = jsonx.Str(p, "current_stage")
-		}
 		uc.Progress = jsonx.Int(p, "percent", "total_percent")
+		stageID := jsonx.Str(p, "current_stage")
+		if cs := jsonx.Get(p, "current_stage"); len(cs) > 0 {
+			uc.Stage, stageID = jsonx.Str(cs, "title"), jsonx.Str(cs, "id")
+		}
+		if uc.Stage == "" && stageID != "" {
+			// API отдаёт только идентификатор этапа — название берём из плана.
+			if plan := sess.Call(ctx, "get_onboarding_plan", nil, ""); !plan.IsError {
+				for _, st := range jsonx.Items(jsonx.Parse([]byte(plan.Text)), "stages") {
+					if jsonx.Str(st, "id") == stageID {
+						uc.Stage = jsonx.Str(st, "title")
+					}
+				}
+			}
+		}
 	}
 	return uc
 }

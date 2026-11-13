@@ -39,7 +39,7 @@ func Items(v any, keys ...string) []Obj {
 	case []any:
 		arr = t
 	case Obj:
-		for _, k := range append(keys, "items", "data", "results") {
+		for _, k := range append(keys, "items", "data", "results", "tasks") {
 			if a, ok := t[k].([]any); ok {
 				arr = a
 				break
