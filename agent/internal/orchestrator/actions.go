@@ -10,6 +10,7 @@ import (
 
 	"ai-buddy/agent/internal/dates"
 	"ai-buddy/agent/internal/jsonx"
+	"ai-buddy/agent/internal/llm"
 	"ai-buddy/agent/internal/mcpclient"
 	"ai-buddy/agent/internal/store"
 )
@@ -97,8 +98,19 @@ func (o *Orchestrator) propose(ctx context.Context, t *turn, tool string, args m
 		return toolError("internal_error", "не удалось подготовить карточку, попробуй ещё раз")
 	}
 	t.proposals = append(t.proposals, a.Summary)
+	// В событии к параметрам добавляются поля только для отображения (номер, автор, суть заявки);
+	// в сохранённое действие и в вызов инструмента они не попадают.
+	shown := map[string]any{}
+	for k, v := range a.Params {
+		shown[k] = v
+	}
+	if display, ok := a.Options["display"].(map[string]any); ok {
+		for k, v := range display {
+			shown[k] = v
+		}
+	}
 	t.em.Emit("action_proposal", map[string]any{"action_id": a.ID, "type": a.Type, "title": a.Title,
-		"summary": a.Summary, "params": a.Params, "options": a.Options, "expires_at": a.ExpiresAt.Format(time.RFC3339)})
+		"summary": a.Summary, "params": shown, "options": a.Options, "expires_at": a.ExpiresAt.Format(time.RFC3339)})
 	o.event(t.token, "action_proposed", map[string]any{"action_id": a.ID, "type": a.Type})
 	return "PROPOSED: карточка «" + a.Summary + "» показана пользователю и ждёт его подтверждения. Действие ещё НЕ выполнено — не говори, что оно сделано."
 }
@@ -280,13 +292,26 @@ func (o *Orchestrator) proposeDecision(ctx context.Context, t *turn, a *store.Ac
 		}
 		req = jsonx.Object(jsonx.Parse([]byte(res.Text)))
 	}
+	who := llm.RequestAuthor(req)
 	a.Params = map[string]any{"request_id": id, "comment": comment}
-	a.Options = map[string]any{"request": req}
-	a.Summary = verb + ": " + requestTitle(req)
-	if who := jsonx.Str(jsonx.Get(req, "user"), "full_name"); who != "" {
-		a.Summary += " — " + who
-	}
+	a.Options = map[string]any{"request": req, "display": map[string]any{
+		"request_number": llm.ShortID(id), "request_type": jsonx.Str(req, "type"),
+		"author_name": who, "summary": requestSubject(req)}}
+	a.Summary = verb + ": " + requestTitle(req) + " — " + who
 	return ""
+}
+
+// requestSubject — суть заявки без типа: даты отгула или система доступа.
+func requestSubject(r jsonx.Obj) string {
+	p := jsonx.Get(r, "payload")
+	if len(p) == 0 {
+		p = r
+	}
+	if jsonx.Str(r, "type") == "access" {
+		return jsonx.Str(p, "system", "system_code")
+	}
+	from, to := argStr(p, "date_from"), argStr(p, "date_to")
+	return dates.RangeRu(from, to) + ", " + plural(dates.Days(from, to), "день", "дня", "дней")
 }
 
 // requestTitle описывает заявку человеческим языком.
@@ -371,12 +396,9 @@ func (o *Orchestrator) Confirm(ctx context.Context, id Identity, token, actionID
 	}
 	defer sess.Close()
 
-	// Idempotency-Key = action_id: повтор не создаст дубль. После сбоя ключ меняется,
-	// чтобы повторная попытка не вернула сохранённую неудачу.
+	// Idempotency-Key = action_id и при повторе после сбоя: API по тому же ключу
+	// повторяет отправку той же заявки, поэтому дублей и «висящих» failed-заявок не остаётся.
 	key := a.ID
-	if a.Attempts > 0 {
-		key = fmt.Sprintf("%s:r%d", a.ID, a.Attempts)
-	}
 	switch a.Type {
 	case TypeAccess:
 		o.execAccess(ctx, sess, a, key, res)
@@ -527,8 +549,12 @@ func (o *Orchestrator) execAccess(ctx context.Context, sess mcpclient.Session, a
 			" (" + strings.TrimRight(lowerFirst(lastErr.Message), ".") + "). Созданные запросы на согласовании" + approver(ctx, sess, first) + "."
 	default:
 		res.Status = "done"
+		they := ". Они на согласовании"
+		if len(okNames) == 1 {
+			they = ". Он на согласовании"
+		}
 		res.Message = "Готово: " + plural(len(okNames), "запрос создан", "запроса создано", "запросов создано") + " — " + strings.Join(okNames, ", ") +
-			". Они на согласовании" + approver(ctx, sess, first) + ". Когда все обязательные доступы выдадут, задача «Получить доступы» закроется сама."
+			they + approver(ctx, sess, first) + ". Когда все обязательные доступы выдадут, задача «Получить доступы» закроется сама."
 	}
 }
 
