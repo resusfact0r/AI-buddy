@@ -83,6 +83,19 @@ func (s *Server) Events() []Event {
 	return append([]Event(nil), s.events...)
 }
 
+// ChatMessages возвращает все сообщения пользователя, сохранённые в истории (во всех диалогах).
+func (s *Server) ChatMessages(userID int) []map[string]any {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []map[string]any
+	for key, msgs := range s.chat {
+		if strings.HasPrefix(key, fmt.Sprint(userID, ":")) {
+			out = append(out, msgs...)
+		}
+	}
+	return out
+}
+
 // Hits возвращает число обращений к маршруту вида "POST /requests/leave".
 func (s *Server) Hits(route string) int { s.mu.Lock(); defer s.mu.Unlock(); return s.hits[route] }
 

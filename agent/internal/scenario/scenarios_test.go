@@ -678,3 +678,34 @@ func TestSuggestionsHealthAndGreeting(t *testing.T) {
 	}
 	contains(t, r.Text, "на согласовании")
 }
+
+// История для интерфейса (POST /chat/messages): в неё попадает то, что видел пользователь,
+// вместе с источниками; служебные пометки агента туда не уходят.
+func TestChatHistoryMirror(t *testing.T) {
+	e := newEnv(t, nil)
+	e.say(anna, "", "Как у нас проходит код-ревью?")
+	p := oneProposal(t, e.say(anna, "", "Хочу отгул в пятницу"), "leave_request")
+	e.cancel(anna, p.ActionID)
+	p = oneProposal(t, e.say(anna, "", "Хочу отгул в пятницу"), "leave_request")
+	e.confirm(anna, p.ActionID, nil)
+
+	var withSources, confirmed int
+	for _, m := range e.api.ChatMessages(1) {
+		content, _ := m["content"].(string)
+		if strings.HasPrefix(content, "[") || strings.Contains(content, "Показана карточка") {
+			t.Errorf("служебная пометка попала в историю для интерфейса: %q", content)
+		}
+		if strings.TrimSpace(content) == "" {
+			t.Errorf("в историю попало пустое сообщение: %+v", m)
+		}
+		if meta, ok := m["meta"].(map[string]any); ok && meta["sources"] != nil {
+			withSources++
+		}
+		if strings.Contains(content, "Готово: заявка создана") {
+			confirmed++
+		}
+	}
+	if withSources < 2 || confirmed != 1 {
+		t.Errorf("ожидались ответы с источниками и результат подтверждения: sources=%d confirmed=%d", withSources, confirmed)
+	}
+}

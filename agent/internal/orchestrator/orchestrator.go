@@ -254,14 +254,14 @@ func (o *Orchestrator) Chat(ctx context.Context, id Identity, token, conv, messa
 		em.Emit("error", ErrorBody{Code: "tool_failed", Retryable: true, Message: t.retryErr.Message})
 	}
 	if strings.TrimSpace(answer) != "" || len(t.proposals) > 0 {
-		o.remember(id, token, conv, message, answer, t.proposals)
+		o.remember(id, token, conv, message, answer, t.proposals, sources...)
 	}
 }
 
 func historyKey(id Identity, conv string) string { return id.ID + ":" + conv }
 
 // remember сохраняет реплики в рабочую историю (Redis) и зеркалит в историю Бэкенда 1.
-func (o *Orchestrator) remember(id Identity, token, conv, user, answer string, proposals []string) {
+func (o *Orchestrator) remember(id Identity, token, conv, user, answer string, proposals []string, sources ...knowledge.Source) {
 	stored := answer
 	for _, p := range proposals {
 		stored += "\n[Показана карточка действия: " + p + " — ждёт подтверждения пользователя]"
@@ -276,11 +276,25 @@ func (o *Orchestrator) remember(id Identity, token, conv, user, answer string, p
 	if err := o.Store.AppendHistory(ctx, historyKey(id, conv), o.Cfg.HistoryLimit, 24*time.Hour, msgs...); err != nil {
 		o.Log.Warn("history not saved", "err", err.Error())
 	}
+	// В историю Бэкенда 1 (её показывает интерфейс после перезагрузки) уходит только то,
+	// что видел пользователь: служебные пометки в квадратных скобках остаются в рабочей истории.
+	if strings.TrimSpace(answer) == "" || strings.HasPrefix(answer, "[") {
+		if user == "" {
+			return
+		}
+	}
 	o.async(func(ctx context.Context) {
 		if user != "" {
 			_ = o.API.SaveMessage(ctx, token, apiclient.ChatMessage{ConversationID: conv, Role: llm.RoleUser, Content: user})
 		}
-		_ = o.API.SaveMessage(ctx, token, apiclient.ChatMessage{ConversationID: conv, Role: llm.RoleAssistant, Content: answer})
+		if strings.TrimSpace(answer) == "" || strings.HasPrefix(answer, "[") {
+			return
+		}
+		msg := apiclient.ChatMessage{ConversationID: conv, Role: llm.RoleAssistant, Content: answer}
+		if len(sources) > 0 {
+			msg.Meta = map[string]any{"sources": sources}
+		}
+		_ = o.API.SaveMessage(ctx, token, msg)
 	})
 }
 

@@ -84,6 +84,8 @@ make lint
 
 `make lint` запускает golangci-lint 2.11.3 (govet, ineffassign, staticcheck) в Docker. `make coverage` запускает интеграционные тесты и отклоняет покрытие операторов <=80%.
 
+Сквозная проверка всего продукта (веб-прокси → агент → MCP → API → corp-mock), нужен только Python 3: `python3 scripts/e2e_smoke.py` (по умолчанию `http://127.0.0.1:3000/api/v1`, другой адрес — первым аргументом). Скрипт создаёт и согласует тестовые заявки синтетических пользователей; его можно запускать повторно.
+
 На свежей синтетической БД: `pwsh -NoProfile -File scripts/smoke.ps1`. Скрипт создаёт заявки и согласует их. Linux-обёртка `scripts/smoke.sh` требует PowerShell 7 (`pwsh`). Замеры простых запросов: `pwsh -NoProfile -File scripts/check-api.ps1`. Оба скрипта принимают `-BaseUrl`.
 
 Изолированная проверка запуска с новой БД, не затрагивающая основной Docker volume:

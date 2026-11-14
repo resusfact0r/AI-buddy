@@ -223,7 +223,8 @@ func (s *Server) actionErr(w http.ResponseWriter, err error) {
 	case errors.Is(err, orchestrator.ErrActionBusy):
 		writeErr(w, 409, "conflict", "Действие уже выполняется. Подожди пару секунд.", true)
 	default:
+		// Сюда попадает отказ хранилища карточек: сама карточка не потеряна, запрос можно повторить.
 		s.Log.Error("action failed", "err", err.Error())
-		writeErr(w, 500, "internal_error", "Внутренняя ошибка. Попробуй ещё раз.", true)
+		writeErr(w, 503, "upstream_unavailable", "Сервис временно недоступен. Карточка сохранена — попробуй ещё раз через минуту.", true)
 	}
 }
