@@ -59,6 +59,13 @@ func TestIntegration(t *testing.T) {
 	if _, e = db.Exec(ctx, string(normalized)); e != nil {
 		t.Fatal(e)
 	}
+	limits, e := os.ReadFile("../../migrations/000003_login_limits.up.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = db.Exec(ctx, string(limits)); e != nil {
+		t.Fatal(e)
+	}
 	store := &storage.Store{DB: db}
 	var preserved string
 	if e = db.QueryRow(ctx, "SELECT payload->>'comment' FROM requests WHERE id='migration-request'").Scan(&preserved); e != nil || preserved != "preserve me" {
@@ -223,6 +230,9 @@ func TestIntegration(t *testing.T) {
 	call("POST", "/requests/missing/wrong", "anna", `{}`, "", 404)
 	call("POST", "/auth/login", "", `{`, "", 400)
 	for i := 0; i < 11; i++ {
+		if i == 5 {
+			a.Redis = nil
+		}
 		want := 401
 		if i == 10 {
 			want = 429
@@ -230,6 +240,21 @@ func TestIntegration(t *testing.T) {
 		call("POST", "/auth/login", "", `{"login":"rate_`+schema+`","password":"bad"}`, "", want)
 	}
 	rejected := call("POST", "/requests/access", "boris", `{"system_code":"grafana","reason":"work"}`, service.ID(), 201)
+	offline, err := NewCache("redis://127.0.0.1:1/0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer offline.Close()
+	a.Redis = offline
+	start := time.Now()
+	call("GET", "/readyz", "", "", "", 200)
+	call("POST", "/auth/login", "", `{"login":"intern_anna","password":"test1234"}`, "", 200)
+	call("GET", "/onboarding/plan", "anna", "", "", 200)
+	call("GET", "/access/overview", "anna", "", "", 200)
+	if time.Since(start) >= 2*time.Second {
+		t.Fatal("requests stalled while Redis was unavailable")
+	}
+	a.Redis = cache
 	call("POST", "/requests/"+rejected["id"].(string)+"/reject", "elena", `{}`, "", 200)
 	savedCorp := svc.Corp
 	svc.Corp = &corpclient.HTTP{URL: corp.URL, Token: "wrong", Client: corp.Client()}
