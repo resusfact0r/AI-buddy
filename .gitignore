@@ -8,3 +8,4 @@ backend/coverage.txt
 coverage.html
 agent/bin/
 node_modules/
+__pycache__/

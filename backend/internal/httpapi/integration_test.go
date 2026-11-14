@@ -120,6 +120,25 @@ func TestIntegration(t *testing.T) {
 	call("PATCH", "/onboarding/tasks/3", "anna", `{"status":"done"}`, "", 409)
 	call("POST", "/chat/messages", "anna", `{"conversation_id":"c","role":"user","content":"hello","meta":{}}`, "", 201)
 	call("GET", "/chat/history?conversation_id=c", "anna", "", "", 200)
+	t.Run("history without conversation_id returns the latest conversation", func(t *testing.T) {
+		call("POST", "/chat/messages", "anna", `{"conversation_id":"c-latest","role":"assistant","content":"latest answer","meta":{}}`, "", 201)
+		for path, want := range map[string]string{"/chat/history": "latest answer", "/chat/history?conversation_id=c": "hello"} {
+			r := httptest.NewRequest("GET", "/api/v1"+path, nil)
+			r.Header.Set("Authorization", "Bearer "+auth.Issue("anna", a.Secret, time.Now()))
+			w := httptest.NewRecorder()
+			a.ServeHTTP(w, r)
+			if w.Code != 200 || !strings.Contains(w.Body.String(), want) {
+				t.Fatalf("%s: got %d %s, want message %q", path, w.Code, w.Body.String(), want)
+			}
+		}
+		r := httptest.NewRequest("GET", "/api/v1/chat/history", nil)
+		r.Header.Set("Authorization", "Bearer "+auth.Issue("boris", a.Secret, time.Now()))
+		w := httptest.NewRecorder()
+		a.ServeHTTP(w, r)
+		if w.Code != 200 || strings.Contains(w.Body.String(), "latest answer") {
+			t.Fatalf("another user's history leaked: %d %s", w.Code, w.Body.String())
+		}
+	})
 	call("POST", "/events", "anna", `{"type":"question_asked","payload":{}}`, "", 201)
 	t.Run("chat writes do not compete with request mutations", func(t *testing.T) {
 		conn, err := db.Acquire(ctx)

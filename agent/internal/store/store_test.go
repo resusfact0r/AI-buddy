@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 )
 
 // Общий набор проверок для обеих реализаций Store.
@@ -114,6 +115,29 @@ func TestRedisStore(t *testing.T) {
 	}
 	if _, err := r.History(ctx, "c", 1); err == nil {
 		t.Error("ожидалась ошибка History")
+	}
+	// Предохранитель: после сбоя следующие операции отказывают сразу, не дожидаясь таймаута.
+	start := time.Now()
+	if _, err := r.GetAction(ctx, "x"); err != ErrUnavailable {
+		t.Errorf("ожидался ErrUnavailable: %v", err)
+	}
+	if err := r.SaveAction(ctx, &Action{ID: "y"}, time.Minute); err != ErrUnavailable {
+		t.Errorf("SaveAction: %v", err)
+	}
+	if ok, err := r.Lock(ctx, "k", time.Minute); ok || err != ErrUnavailable {
+		t.Errorf("Lock: %v %v", ok, err)
+	}
+	r.Unlock(ctx, "k")
+	if err := r.AppendHistory(ctx, "c", 1, time.Minute, Message{}); err != ErrUnavailable {
+		t.Errorf("AppendHistory: %v", err)
+	}
+	if time.Since(start) > 200*time.Millisecond {
+		t.Errorf("операции при разомкнутом предохранителе должны быть мгновенными: %v", time.Since(start))
+	}
+	// Отсутствие ключа сбоем не считается.
+	r.downUntil = time.Time{}
+	if r.note(redis.Nil); !r.ready() {
+		t.Error("redis.Nil не должен размыкать предохранитель")
 	}
 	if _, err := NewRedis("not-a-url"); err == nil {
 		t.Error("некорректный URL должен давать ошибку")
