@@ -12,18 +12,18 @@ function daysSince(iso: string): number {
 
 function PersonCard({ role, person }: { role: string; person: Person | null }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-canvas px-3 py-2.5">
+    <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-canvas px-4 py-3">
       {person ? (
-        <Avatar name={person.display_name} />
+        <Avatar name={person.display_name} className="h-11 w-11" />
       ) : (
-        <span className="h-10 w-10 shrink-0 rounded-full bg-line" />
+        <span className="h-11 w-11 shrink-0 rounded-full bg-line" />
       )}
       <div className="min-w-0 leading-tight">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{role}</div>
-        <div className="truncate font-semibold">{person?.display_name ?? 'Не назначен'}</div>
+        <div className="eyebrow">{role}</div>
+        <div className="mt-0.5 truncate font-bold">{person?.display_name ?? 'Не назначен'}</div>
         {person?.contact && (
-          <div className="flex items-center gap-1 truncate text-xs text-ink-soft">
-            <MessageCircle className="h-3 w-3" aria-hidden />
+          <div className="mt-0.5 flex items-center gap-1 truncate text-sm text-ink-soft">
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden />
             {person.contact}
           </div>
         )}
@@ -37,11 +37,11 @@ export function WelcomeCard() {
   if (q.isPending) {
     return (
       <div className="card space-y-4 p-6" role="status" aria-label="Загрузка профиля">
-        <Skeleton className="h-8 w-2/3" />
-        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-12 w-2/3" />
+        <Skeleton className="h-5 w-1/3" />
         <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="h-16" />
-          <Skeleton className="h-16" />
+          <Skeleton className="h-[68px]" />
+          <Skeleton className="h-[68px]" />
         </div>
       </div>
     );
@@ -50,24 +50,25 @@ export function WelcomeCard() {
   const { user, team, buddy, lead, start_date } = q.data;
   const first = user.display_name.split(' ')[0];
   return (
-    <section className="card overflow-hidden" aria-labelledby="welcome-title">
-      <div className="bg-[linear-gradient(120deg,#E5F4FF_0%,#F1E9FD_100%)] px-6 pb-5 pt-6">
-        <h1 id="welcome-title" className="text-[26px] font-extrabold leading-tight tracking-tight">
-          Привет, {first}! 👋
-        </h1>
-        <p className="mt-1 text-ink-soft">
-          {team ? (
-            <>
-              Команда <b className="text-ink">«{team.name}»</b>
-            </>
-          ) : (
-            'Команда не назначена'
-          )}
-          {start_date && <> · {daysSince(start_date)}-й день в компании</>}
-        </p>
-      </div>
+    <section className="card p-6 sm:p-7" aria-labelledby="welcome-title">
+      <h1
+        id="welcome-title"
+        className="text-[34px] font-extrabold leading-tight tracking-tight sm:text-[44px]"
+      >
+        <span className="mark mark-green">Привет, {first}! 👋</span>
+      </h1>
+      <p className="mt-4 text-lg font-medium text-ink-soft">
+        {team ? (
+          <>
+            Команда <b className="font-bold text-ink">«{team.name}»</b>
+          </>
+        ) : (
+          'Команда не назначена'
+        )}
+        {start_date && <> · {daysSince(start_date)}-й день в компании</>}
+      </p>
       {user.role === 'intern' && (
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <PersonCard role="Наставник" person={buddy} />
           <PersonCard role="Руководитель" person={lead} />
         </div>

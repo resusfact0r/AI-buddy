@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, Sparkles } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import { agentApi } from '@/api/agent';
 import { backendApi } from '@/api/backend';
 import { qk } from '@/api/queryKeys';
@@ -9,6 +9,7 @@ import { useSession } from '@/stores/session';
 import { cn } from '@/lib/cn';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/States';
+import { LogoMark } from '@/components/Logo';
 import { Message } from './Message';
 import { Composer } from './Composer';
 
@@ -34,7 +35,7 @@ function Suggestions() {
             type="button"
             disabled={streaming}
             onClick={() => void send(s.text)}
-            className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
+            className="rounded-full bg-canvas px-4 py-2.5 text-sm font-bold text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-50"
           >
             {s.text}
           </button>
@@ -48,12 +49,12 @@ function EmptyChat() {
   const name = useSession((s) => s.user?.display_name.split(' ')[0]);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-4 py-8 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-soft text-brand" aria-hidden>
-        <Sparkles className="h-7 w-7" />
-      </span>
+      <LogoMark className="h-16 w-16 rounded-3xl" />
       <div>
-        <p className="text-xl font-bold">{name ? `${name}, чем помочь?` : 'Чем помочь?'}</p>
-        <p className="mt-1 text-sm text-ink-soft">Спросите о плане, команде, отгуле или доступах.</p>
+        <p className="text-[28px] font-extrabold leading-tight tracking-tight">
+          {name ? `${name}, чем помочь?` : 'Чем помочь?'}
+        </p>
+        <p className="mt-1.5 font-medium text-ink-soft">Спросите о плане, команде, отгуле или доступах.</p>
       </div>
       <Suggestions />
     </div>
@@ -107,19 +108,16 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
   return (
     <section
       aria-label="Чат с AI-buddy"
-      className={cn(
-        'relative flex min-h-0 flex-col overflow-hidden rounded-3xl bg-canvas/60 ring-1 ring-line',
-        className,
-      )}
+      className={cn('relative flex min-h-0 flex-col overflow-hidden rounded-3xl bg-white', className)}
     >
-      <header className="flex items-center gap-3 border-b border-line bg-white px-5 py-3.5">
-        <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-brand text-white" aria-hidden>
-          <Sparkles className="h-5 w-5" />
+      <header className="flex items-center gap-3 border-b border-line px-5 py-4 sm:px-6">
+        <span className="relative" aria-hidden>
+          <LogoMark className="h-10 w-10 rounded-xl" />
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-ok" />
         </span>
         <div className="leading-tight">
-          <h2 className="font-bold">AI-buddy</h2>
-          <p className="text-xs text-ink-muted">
+          <h2 className="text-lg font-extrabold">AI-buddy</h2>
+          <p className="text-xs font-medium text-ink-soft">
             {streaming ? 'печатает…' : 'ваш наставник, отвечает сразу'}
           </p>
         </div>
@@ -128,7 +126,7 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
       <div
         ref={scrollRef}
         onScroll={onScroll}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-5"
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6"
         role="log"
         aria-live="polite"
         aria-relevant="additions"
@@ -165,7 +163,7 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
         </button>
       )}
 
-      <div className="border-t border-line bg-white/70 p-3">
+      <div className="px-3 pb-3 pt-1 sm:px-5 sm:pb-4">
         <Composer autoFocus={autoFocus} />
         <p className="mt-1.5 px-1 text-[11px] text-ink-muted">
           Enter — отправить, Shift+Enter — новая строка. AI-buddy может ошибаться — действия выполняются

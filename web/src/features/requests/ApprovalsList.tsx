@@ -31,13 +31,13 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
   const Icon = r.type === 'leave' ? CalendarDays : KeyRound;
   const reason = requestReason(r);
   return (
-    <li className="card animate-fade-up p-5">
+    <li className="card animate-fade-up p-5 sm:p-6">
       <div className="flex items-start gap-3">
         <Avatar name={r.author.display_name} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
-            <span className="font-bold">{r.author.display_name}</span>
-            <span className="text-sm text-ink-muted">
+            <span className="text-[17px] font-extrabold">{r.author.display_name}</span>
+            <span className="text-sm font-medium text-ink-soft">
               {r.number} · {formatDateTime(r.created_at)}
             </span>
           </div>
@@ -45,16 +45,18 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
             <span
               className={cn(
                 'grid h-7 w-7 place-items-center rounded-lg',
-                r.type === 'leave' ? 'bg-brand-soft text-brand' : 'bg-violet-soft text-violet',
+                r.type === 'leave' ? 'bg-brand-soft text-ink' : 'bg-violet-soft text-ink',
               )}
               aria-hidden
             >
               <Icon className="h-4 w-4" />
             </span>
-            <span className="font-semibold">{requestTitle(r)}</span>
+            <span className="font-bold">{requestTitle(r)}</span>
             {r.type === 'leave' && <span className="text-ink-soft">· {requestSubject(r)}</span>}
           </div>
-          {reason && <p className="mt-1.5 text-sm text-ink-soft">«{reason}»</p>}
+          {reason && (
+            <p className="mt-2 rounded-xl bg-canvas px-3 py-2 text-sm font-medium text-ink">«{reason}»</p>
+          )}
         </div>
       </div>
       {showComment && (

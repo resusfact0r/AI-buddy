@@ -56,14 +56,14 @@ export function AppShell() {
       >
         К содержимому
       </a>
-      <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4 lg:px-6">
+      <header className="sticky top-0 z-30 border-b border-line bg-white">
+        <div className="mx-auto flex h-[68px] max-w-[1360px] items-center gap-5 px-4 lg:px-8">
           <NavLink to="/" aria-label="AI-buddy — на главную" className="rounded-lg">
             <Logo />
           </NavLink>
           <nav
             aria-label="Основная навигация"
-            className="-mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1"
+            className="relative -mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 py-1"
           >
             {items.map((n) => (
               <NavLink
@@ -72,8 +72,8 @@ export function AppShell() {
                 end={n.to === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors',
-                    isActive ? 'bg-ink text-white' : 'text-ink-soft hover:bg-canvas hover:text-ink',
+                    'relative flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-bold transition-colors md:px-4',
+                    isActive ? 'bg-ink text-white' : 'text-ink hover:bg-canvas',
                   )
                 }
               >
@@ -86,14 +86,14 @@ export function AppShell() {
           {user && (
             <div className="flex items-center gap-3">
               <div className="hidden text-right leading-tight sm:block">
-                <div className="text-sm font-semibold">{user.display_name}</div>
-                <div className="text-xs text-ink-muted">{ROLE_LABEL[user.role]}</div>
+                <div className="text-sm font-bold">{user.display_name}</div>
+                <div className="text-xs font-medium text-ink-soft">{ROLE_LABEL[user.role]}</div>
               </div>
               <Avatar name={user.display_name} className="h-9 w-9" />
               <button
                 type="button"
                 onClick={onLogout}
-                className="grid h-9 w-9 place-items-center rounded-xl text-ink-soft hover:bg-canvas hover:text-ink"
+                className="grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-canvas"
                 aria-label="Выйти"
                 title="Выйти"
               >
@@ -103,10 +103,10 @@ export function AppShell() {
           )}
         </div>
       </header>
-      <main id="main" className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-6">
+      <main id="main" className="mx-auto w-full max-w-[1360px] flex-1 px-4 py-6 lg:px-8 lg:py-8">
         <Outlet />
       </main>
-      <footer className="border-t border-line py-4 text-center text-xs text-ink-muted">
+      <footer className="py-5 text-center text-xs font-medium text-ink-muted">
         AI-buddy · Демо-версия, тестовые данные
       </footer>
       <ArticleSheet />

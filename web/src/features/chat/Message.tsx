@@ -8,11 +8,15 @@ import { ActionCard } from './ActionCard';
 
 export function StatusLine({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-ink-soft" role="status" aria-live="polite">
+    <div
+      className="flex items-center gap-2.5 text-sm font-medium text-ink-soft"
+      role="status"
+      aria-live="polite"
+    >
       <span className="flex gap-1" aria-hidden>
-        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-brand" />
-        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-brand" />
-        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-brand" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-ink" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-ink" />
+        <span className="typing-dot h-2 w-2 rounded-full bg-ink" />
       </span>
       {text}
     </div>
@@ -21,7 +25,7 @@ export function StatusLine({ text }: { text: string }) {
 
 function BotAvatar() {
   return (
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand text-white" aria-hidden>
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-ink text-ok" aria-hidden>
       <svg viewBox="0 0 32 32" className="h-6 w-6">
         <circle cx="11.5" cy="14" r="2.6" fill="currentColor" />
         <circle cx="20.5" cy="14" r="2.6" fill="currentColor" />
@@ -44,7 +48,7 @@ export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
   if (msg.role === 'user') {
     return (
       <div className="flex justify-end animate-fade-up">
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-[15px] text-white">
+        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-[15px] font-medium text-ink">
           {msg.text}
         </div>
       </div>
@@ -57,7 +61,7 @@ export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
       <BotAvatar />
       <div className="min-w-0 max-w-[92%] flex-1">
         {(msg.text || (!msg.status && empty && !msg.stopped)) && (
-          <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white px-4 py-2.5 shadow-card">
+          <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-canvas px-4 py-3">
             {msg.text ? (
               <Markdown>{msg.text}</Markdown>
             ) : (
@@ -65,7 +69,7 @@ export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
             )}
             {msg.streaming && !msg.status && (
               <span
-                className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-brand/60"
+                className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-ink/50"
                 aria-hidden
               />
             )}
@@ -88,7 +92,7 @@ export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
         {msg.error && (
           <div
             role="alert"
-            className="mt-2 flex flex-wrap items-center gap-3 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger"
+            className="mt-2 flex flex-wrap items-center gap-3 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm font-semibold text-ink"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
             <span className="flex-1">{msg.error.message}</span>

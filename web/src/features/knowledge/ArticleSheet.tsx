@@ -23,20 +23,20 @@ export function ArticleSheet() {
   return (
     <Dialog.Root open={Boolean(openId)} onOpenChange={(o) => !o && close()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/20 backdrop-blur-[1px] data-[state=open]:animate-fade-up" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/40 data-[state=open]:animate-fade-up" />
         <Dialog.Content
           aria-describedby={undefined}
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-pop data-[state=open]:animate-fade-up sm:rounded-l-3xl"
         >
           <div className="flex items-start gap-3 border-b border-line p-5">
             <span
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand text-ink"
               aria-hidden
             >
               <BookOpen className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <Dialog.Title className="text-lg font-bold leading-snug">
+              <Dialog.Title className="text-xl font-extrabold leading-snug">
                 {q.data?.title ?? (q.isError ? 'Статья' : 'Загрузка…')}
               </Dialog.Title>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
@@ -45,7 +45,7 @@ export function ArticleSheet() {
               </div>
             </div>
             <Dialog.Close
-              className="grid h-9 w-9 place-items-center rounded-xl text-ink-soft hover:bg-canvas"
+              className="grid h-10 w-10 place-items-center rounded-full text-ink hover:bg-canvas"
               aria-label="Закрыть статью"
             >
               <X className="h-5 w-5" aria-hidden />

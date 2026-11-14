@@ -12,10 +12,10 @@ export function SourceChips({ sources }: { sources: Source[] }) {
           key={s.id}
           type="button"
           onClick={() => open(s.id)}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-brand hover:text-brand"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-brand-soft px-3.5 py-1.5 text-sm font-bold text-ink transition-colors hover:bg-brand"
           title={s.snippet ?? 'Открыть статью'}
         >
-          <FileText className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+          <FileText className="h-4 w-4 shrink-0" aria-hidden />
           <span className="truncate">{s.title}</span>
         </button>
       ))}

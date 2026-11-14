@@ -59,7 +59,7 @@ export function AccessRequestForm({
   return (
     <form onSubmit={submit} noValidate className="space-y-3" aria-label="Запрос доступов">
       <fieldset>
-        <legend className="mb-1.5 text-sm font-semibold text-ink-soft">Системы</legend>
+        <legend className="mb-1.5 text-sm font-bold text-ink">Системы</legend>
         <ul className="space-y-1.5">
           {systems.map((s) => {
             const on = selected.includes(s.id);
@@ -67,8 +67,8 @@ export function AccessRequestForm({
               <li key={s.id}>
                 <label
                   className={cn(
-                    'flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors',
-                    on ? 'border-brand bg-brand-soft/50' : 'border-line hover:bg-canvas',
+                    'flex cursor-pointer items-start gap-3 rounded-xl px-3.5 py-3 transition-colors',
+                    on ? 'bg-violet-soft' : 'bg-canvas hover:bg-line',
                   )}
                 >
                   <input
@@ -80,15 +80,15 @@ export function AccessRequestForm({
                   <span
                     aria-hidden
                     className={cn(
-                      'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand',
-                      on ? 'border-brand bg-brand text-white' : 'border-line bg-white',
+                      'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2',
+                      on ? 'border-ink bg-ink text-white' : 'border-ink/25 bg-white',
                     )}
                   >
                     {on && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-semibold">{s.name}</span>
-                    {s.purpose && <span className="block text-sm text-ink-soft">{s.purpose}</span>}
+                    <span className="block font-bold">{s.name}</span>
+                    {s.purpose && <span className="block text-sm text-ink/70">{s.purpose}</span>}
                   </span>
                 </label>
               </li>
@@ -96,7 +96,7 @@ export function AccessRequestForm({
           })}
         </ul>
         {shown.system_ids && (
-          <p role="alert" className="mt-1 text-xs font-medium text-danger">
+          <p role="alert" className="mt-1 text-xs font-medium text-danger-strong">
             {shown.system_ids}
           </p>
         )}
@@ -117,7 +117,7 @@ export function AccessRequestForm({
         <Button type="submit" loading={pending} disabled={selected.length === 0}>
           {submitLabel}
           {selected.length > 0 && (
-            <span className="rounded-md bg-white/25 px-1.5 text-xs">{selected.length}</span>
+            <span className="rounded-md bg-white/20 px-1.5 text-xs">{selected.length}</span>
           )}
         </Button>
         {onCancel && (

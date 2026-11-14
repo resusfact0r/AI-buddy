@@ -41,7 +41,7 @@ function RequestDialog({ systems, onClose }: { systems: AccessSystem[]; onClose:
       description="Запрос уйдёт руководителю на согласование."
     >
       {err && err.kind !== 'validation' && (
-        <p role="alert" className="mb-3 rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger">
+        <p role="alert" className="mb-3 rounded-xl bg-danger-soft px-3 py-2.5 text-sm text-danger-strong">
           {err.message}
         </p>
       )}
@@ -82,9 +82,9 @@ export function AccessPage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight">Мои доступы</h1>
+          <h1 className="page-title">Мои доступы</h1>
           {q.data && (
-            <p className="text-ink-soft">
+            <p className="mt-1 max-w-2xl text-lg font-medium text-ink-soft">
               Выдано{' '}
               <b className="text-ink">
                 {q.data.granted} из {q.data.total}
@@ -111,7 +111,7 @@ export function AccessPage() {
         <div className="card overflow-hidden">
           <table className="w-full text-left text-[15px]">
             <caption className="sr-only">Системы и статус доступа</caption>
-            <thead className="hidden border-b border-line bg-canvas/60 text-xs font-semibold uppercase tracking-wide text-ink-muted sm:table-header-group">
+            <thead className="hidden border-b border-line text-xs font-bold uppercase tracking-[0.08em] text-ink-soft sm:table-header-group">
               <tr>
                 <th scope="col" className="px-5 py-3">
                   Система
@@ -136,13 +136,13 @@ export function AccessPage() {
                   <td className="w-full sm:w-auto sm:px-5 sm:py-4">
                     <div className="flex items-center gap-3">
                       <span
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-soft text-violet"
+                        className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-soft text-ink"
                         aria-hidden
                       >
                         <KeyRound className="h-4 w-4" />
                       </span>
                       <div>
-                        <div className="font-semibold">{s.name}</div>
+                        <div className="text-[17px] font-bold">{s.name}</div>
                         <div className="text-sm text-ink-soft">{s.purpose}</div>
                       </div>
                     </div>

@@ -49,7 +49,7 @@ export function Composer({ autoFocus }: { autoFocus?: boolean }) {
 
   return (
     <form
-      className="flex items-end gap-2 rounded-2xl border border-line bg-white p-2 pl-4 shadow-card focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15"
+      className="flex items-end gap-2 rounded-2xl border-2 border-transparent bg-canvas p-1.5 pl-4 transition-colors focus-within:border-ink focus-within:bg-white"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -66,7 +66,7 @@ export function Composer({ autoFocus }: { autoFocus?: boolean }) {
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder="Спросите AI-buddy…"
-        className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent py-2 text-[15px] outline-none placeholder:text-ink-muted focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent py-2 text-[15px] font-medium outline-none placeholder:font-normal placeholder:text-ink-muted focus-visible:ring-0 focus-visible:ring-offset-0"
       />
       {streaming ? (
         <button
@@ -86,7 +86,7 @@ export function Composer({ autoFocus }: { autoFocus?: boolean }) {
           disabled={!draft.trim()}
           className={cn(
             'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
-            draft.trim() ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-canvas text-ink-muted',
+            draft.trim() ? 'bg-ink text-white hover:bg-ink/85' : 'bg-line text-ink-muted',
           )}
         >
           <ArrowUp className="h-5 w-5" aria-hidden />
