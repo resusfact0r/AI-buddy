@@ -71,10 +71,6 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				failure(w, domain.Err(503, "unavailable", "База недоступна"))
 				return
 			}
-			if e := a.Redis.Ping(ctx).Err(); e != nil {
-				failure(w, domain.Err(503, "unavailable", "Redis недоступен"))
-				return
-			}
 		}
 		write(w, 200, map[string]string{"status": "ok"})
 		return
@@ -306,9 +302,16 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := fmt.Sprintf("login:%x", sha256.Sum256([]byte(b.Login)))
-	n, e := a.Redis.Eval(r.Context(), `local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],60) end; return n`, []string{key}).Int()
+	var n int
+	e := a.Store.DB.QueryRow(r.Context(), `
+		WITH expired AS (DELETE FROM login_limits WHERE expires_at <= now() AND login_hash <> $1)
+		INSERT INTO login_limits AS l (login_hash, attempts, expires_at) VALUES ($1, 1, now() + interval '1 minute')
+		ON CONFLICT (login_hash) DO UPDATE SET
+			attempts = CASE WHEN l.expires_at <= now() THEN 1 ELSE least(l.attempts + 1, 11) END,
+			expires_at = CASE WHEN l.expires_at <= now() THEN excluded.expires_at ELSE l.expires_at END
+		RETURNING attempts`, key).Scan(&n)
 	if e != nil {
-		failure(w, domain.Err(503, "unavailable", "Redis недоступен"))
+		failure(w, e)
 		return
 	}
 	if n > 10 {
@@ -378,8 +381,7 @@ func (a *API) create(w http.ResponseWriter, r *http.Request, u domain.User, kind
 	response, _ = json.Marshal(req)
 	cached.Hash = hash
 	cached.Response = response
-	encoded, _ := json.Marshal(cached)
-	_ = a.Redis.Set(r.Context(), redisKey, encoded, 24*time.Hour).Err()
+	a.cacheFor(r.Context(), redisKey, cached, 24*time.Hour)
 	write(w, 201, req)
 }
 func limit(r *http.Request, def int) int {

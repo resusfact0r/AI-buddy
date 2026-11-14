@@ -118,7 +118,7 @@ func (s *Store) ResetDemo(ctx context.Context) error {
 	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(814422)"); e != nil {
 		return e
 	}
-	if _, e = tx.Exec(ctx, "TRUNCATE idempotency,corp_requests,chat_messages,events,requests,user_tasks,onboarding_tasks,onboarding_stages,knowledge_articles,team_tools,users,teams RESTART IDENTITY"); e != nil {
+	if _, e = tx.Exec(ctx, "TRUNCATE login_limits,idempotency,corp_requests,chat_messages,events,requests,user_tasks,onboarding_tasks,onboarding_stages,knowledge_articles,team_tools,users,teams RESTART IDENTITY"); e != nil {
 		return e
 	}
 	if e = s.seedTx(ctx, tx); e != nil {

@@ -7,7 +7,6 @@ import (
 	"aibuddy/backend/internal/storage"
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 	"log/slog"
 	"net/http"
 	"os"
@@ -38,21 +37,22 @@ func run() error {
 	if e = db.Ping(ctx); e != nil {
 		return e
 	}
-	opt, e := redis.ParseURL(os.Getenv("REDIS_URL"))
+	cache, e := httpapi.NewCache(os.Getenv("REDIS_URL"))
 	if e != nil {
 		return e
 	}
-	cache := redis.NewClient(opt)
-	defer cache.Close()
-	if e = cache.Ping(ctx).Err(); e != nil {
-		return e
+	if cache != nil {
+		defer cache.Close()
 	}
 	store := &storage.Store{DB: db}
 	if len(os.Args) == 2 && os.Args[1] == "--reset-demo" {
 		if e = store.ResetDemo(ctx); e != nil {
 			return e
 		}
-		return cache.FlushDB(ctx).Err()
+		if cache != nil {
+			return cache.FlushDB(ctx).Err()
+		}
+		return nil
 	}
 	if e = store.Seed(ctx); e != nil {
 		return e
