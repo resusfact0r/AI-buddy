@@ -3,6 +3,8 @@ import { WelcomeCard } from '@/features/onboarding/WelcomeCard';
 import { ApprovalsList } from '@/features/requests/ApprovalsList';
 import { usePendingApprovals } from '@/features/requests/hooks';
 import { SplitLayout } from './HomePage';
+import { FirstDayReadiness } from '@/features/onboarding/FirstDayReadiness';
+import { config } from '@/config';
 
 function PendingHeader() {
   const q = usePendingApprovals();
@@ -27,6 +29,7 @@ export function LeadHome() {
       panel={
         <>
           <WelcomeCard />
+          {!config.useMocks && <FirstDayReadiness />}
           <PendingHeader />
           <ApprovalsList compact />
         </>

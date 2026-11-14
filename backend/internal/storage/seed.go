@@ -69,6 +69,9 @@ func (s *Store) seedTx(ctx context.Context, tx pgx.Tx) error {
 				}
 				st.Tasks = append(st.Tasks, domain.Task{ID: fmt.Sprint(n + 1), StageID: st.ID, Code: code, Title: titles[n], Description: "Тестовая задача адаптации; обсудите результат с наставником", Required: true, Status: status})
 			}
+			if i == 0 {
+				st.Tasks[1].Link = "/knowledge/common-4"
+			}
 			stages = append(stages, st)
 		}
 		b, _ = json.Marshal(stages)

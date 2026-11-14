@@ -142,6 +142,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		out = t
+	case path == "/onboarding/first-day-readiness" && r.Method == "GET":
+		out, e = a.firstDay(ctx, u)
 	case strings.HasPrefix(path, "/onboarding/") && r.Method == "GET":
 		var p []domain.Stage
 		target := r.URL.Query().Get("user_id")

@@ -59,6 +59,7 @@ export function useDecision() {
       if (ctx?.prev) qc.setQueryData(qk.approvals, ctx.prev);
     },
     onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['first-day-readiness'] });
       void qc.invalidateQueries({ queryKey: qk.approvals });
       void qc.invalidateQueries({ queryKey: qk.requests });
     },

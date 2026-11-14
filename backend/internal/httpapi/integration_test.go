@@ -177,9 +177,29 @@ func TestIntegration(t *testing.T) {
 	call("GET", "/approvals/pending", "elena", "", "", 200)
 	call("GET", "/approvals/pending", "anna", "", "", 403)
 	call("POST", "/requests/"+id+"/approve", "elena", `{}`, "", 200)
+	const readiness = "/onboarding/first-day-readiness"
+	call("GET", readiness, "anna", "", "", 403)
+	checkDay := func(want int) {
+		t.Helper()
+		report := call("GET", readiness, "elena", "", "", 200)
+		raw, _ := json.Marshal(report["interns"])
+		var days []internDay
+		if err := json.Unmarshal(raw, &days); err != nil || len(days) != 2 || days[0].ID != "anna" || days[0].Ready != want || len(days[0].Tasks) != 3 || days[1].ID != "boris" {
+			t.Fatalf("unexpected first-day readiness: %s", raw)
+		}
+	}
+	checkDay(2)
+	if _, e = db.Exec(ctx, "UPDATE onboarding_tasks SET link='/knowledge/frontend-0' WHERE code='task_2'"); e != nil {
+		t.Fatal(e)
+	}
+	checkDay(1)
+	if _, e = db.Exec(ctx, "UPDATE onboarding_tasks SET link='/knowledge/common-4' WHERE code='task_2'"); e != nil {
+		t.Fatal(e)
+	}
 	access := call("POST", "/requests/access", "anna", `{"system_code":"grafana","reason":"work"}`, service.ID(), 201)
 	call("POST", "/requests/"+access["id"].(string)+"/approve", "elena", `{}`, "", 200)
 	call("POST", "/requests/seed-access-1/approve", "elena", `{}`, "", 200)
+	checkDay(3)
 	p, e := store.Plan(ctx, "anna")
 	if e != nil || p[0].Tasks[2].Status != "done" {
 		t.Fatal("access task not done", e)
