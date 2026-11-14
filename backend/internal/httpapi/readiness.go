@@ -51,6 +51,13 @@ func (a *API) firstDay(ctx context.Context, lead domain.User) (any, error) {
 		}
 		for _, task := range stages[0].Tasks {
 			item := dayTask{Title: task.Title, Blockers: []string{}}
+			if task.Status == "blocked" {
+				reason := "Стажёр отметил задачу как заблокированную"
+				if comment := strings.TrimSpace(task.Comment); comment != "" {
+					reason += ": " + comment
+				}
+				item.Blockers = append(item.Blockers, reason)
+			}
 			if task.Code == "get_access" {
 				for _, s := range access {
 					if s["required"] != true {

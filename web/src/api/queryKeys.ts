@@ -6,6 +6,7 @@ export const qk = {
   profile: ['profile'] as const,
   team: (id: string) => ['team', id] as const,
   onboarding: ['onboarding'] as const,
+  readiness: ['onboarding', 'first-day-readiness'] as const,
   plan: ['onboarding', 'plan'] as const,
   progress: ['onboarding', 'progress'] as const,
   nextSteps: ['onboarding', 'next-steps'] as const,

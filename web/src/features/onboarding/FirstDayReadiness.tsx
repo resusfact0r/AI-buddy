@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { backendHttp } from '@/api/http';
+import { qk } from '@/api/queryKeys';
 import { useSession } from '@/stores/session';
 
 const reportSchema = z.object({
@@ -20,7 +21,7 @@ export function FirstDayReadiness() {
   const [selected, setSelected] = useState('');
   const lead = useSession((s) => s.user?.id);
   const q = useQuery({
-    queryKey: ['first-day-readiness', lead],
+    queryKey: [...qk.readiness, lead],
     queryFn: () => backendHttp('/onboarding/first-day-readiness', { schema: reportSchema }),
   });
   const interns = q.data?.interns ?? [];
@@ -34,7 +35,7 @@ export function FirstDayReadiness() {
       {q.isLoading && <p role="status">Проверяем план…</p>}
       {q.isError && <p role="alert">Не удалось проверить план.</p>}
       {q.isSuccess && !intern && <p>В вашей команде пока нет стажёров.</p>}
-      {intern && (
+      {q.isSuccess && intern && (
         <>
           <label className="block">
             Стажёр

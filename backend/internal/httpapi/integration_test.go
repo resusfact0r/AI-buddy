@@ -189,6 +189,13 @@ func TestIntegration(t *testing.T) {
 		}
 	}
 	checkDay(2)
+	call("PATCH", "/onboarding/tasks/1", "anna", `{"status":"blocked","comment":"Жду встречи с наставником"}`, "", 200)
+	checkDay(1)
+	call("PATCH", "/onboarding/tasks/1", "anna", `{"status":"done"}`, "", 200)
+	if _, e = db.Exec(ctx, "UPDATE onboarding_tasks SET link='/knowledge/missing' WHERE code='task_2'"); e != nil {
+		t.Fatal(e)
+	}
+	checkDay(1)
 	if _, e = db.Exec(ctx, "UPDATE onboarding_tasks SET link='/knowledge/frontend-0' WHERE code='task_2'"); e != nil {
 		t.Fatal(e)
 	}
@@ -301,6 +308,15 @@ func TestIntegration(t *testing.T) {
 	var requestCount int
 	if e = db.QueryRow(ctx, "SELECT count(*) FROM requests").Scan(&requestCount); e != nil || requestCount != 2 {
 		t.Fatal("reset requests", requestCount, e)
+	}
+	if _, e = db.Exec(ctx, "DELETE FROM user_tasks WHERE user_id='vera'"); e != nil {
+		t.Fatal(e)
+	}
+	report := call("GET", readiness, "fedor", "", "", 200)
+	raw, _ := json.Marshal(report["interns"])
+	var emptyPlan []internDay
+	if e = json.Unmarshal(raw, &emptyPlan); e != nil || len(emptyPlan) != 1 || emptyPlan[0].ID != "vera" || emptyPlan[0].Ready != 0 || emptyPlan[0].Tasks == nil || len(emptyPlan[0].Tasks) != 0 {
+		t.Fatalf("unexpected empty plan or team scope: %s", raw)
 	}
 
 }
