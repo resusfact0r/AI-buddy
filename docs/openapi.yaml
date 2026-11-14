@@ -16,6 +16,32 @@
     }
   ],
   "paths": {
+    "/onboarding/first-day-readiness": {
+      "get": {
+        "summary": "Готовность первого дня стажёров команды руководителя",
+        "responses": {
+          "200": {
+            "description": "ready — число задач первого этапа без выявленных препятствий",
+            "content": {"application/json": {"schema": {
+              "type": "object", "required": ["interns"], "properties": {
+                "interns": {"type": "array", "items": {
+                  "type": "object", "required": ["id", "name", "ready", "tasks"],
+                  "properties": {
+                    "id": {"type": "string"}, "name": {"type": "string"}, "ready": {"type": "integer"},
+                    "tasks": {"type": "array", "items": {
+                      "type": "object", "required": ["title", "blockers"],
+                      "properties": {"title": {"type": "string"}, "blockers": {"type": "array", "items": {"type": "string"}}}
+                    }}
+                  }
+                }}
+              }
+            }}}
+          },
+          "401": {"description": "Требуется вход"},
+          "403": {"description": "Доступно только руководителю"}
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "summary": "JWT на 12 часов",
