@@ -72,7 +72,8 @@ api/          явный API-клиент
   queryKeys.ts  ключи TanStack Query
 stores/       Zustand: session (токен, пользователь), chat (сообщения, стрим, действия)
 features/
-  chat/         ChatPanel, Message, Composer, ActionCard (5 типов действий), SourceChips
+  chat/         ChatPanel, Message, Composer, ActionCard (5 типов действий), SourceChips,
+                useBuddyMood (настроение маскота по состоянию чата)
   onboarding/   приветствие, следующие шаги, прогресс, хуки плана (оптимистичные обновления)
   access/       форма запроса доступов (общая для чата и экрана), виджет
   leave/        форма отгула (общая для чата и ручного оформления)
@@ -80,7 +81,8 @@ features/
   knowledge/    боковая панель статьи
 pages/        экраны: вход, главная (стажёр / руководитель), чат, план, доступы, заявки, согласования
 app/          роутинг по ролям, провайдеры, оболочка, префетч
-components/   UI-примитивы и Markdown (без сырого HTML)
+components/   UI-примитивы, Markdown (без сырого HTML) и Buddy — маскот с анимациями
+              простоя, размышления и найденного ответа (buddy.css)
 mocks/        MSW: данные, «БД» с бизнес-правилами, сценарии агента
 lib/          даты, тосты, валидация форм
 ```
