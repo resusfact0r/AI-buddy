@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, MessageCircle } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import { agentApi } from '@/api/agent';
 import { backendApi } from '@/api/backend';
 import { qk } from '@/api/queryKeys';
 import { useChat } from '@/stores/chat';
 import { useSession } from '@/stores/session';
 import { cn } from '@/lib/cn';
+import { Buddy } from '@/components/Buddy';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/States';
 import { Message } from './Message';
 import { Composer } from './Composer';
+import { useBuddyMood } from './useBuddyMood';
 
 const CHIP =
   'rounded-full border border-line bg-white text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-50';
@@ -82,9 +84,7 @@ function EmptyChat() {
   const name = useSession((s) => s.user?.display_name.split(' ')[0]);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-4 py-8 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-soft text-brand" aria-hidden>
-        <MessageCircle className="h-7 w-7" />
-      </span>
+      <Buddy size={112} />
       <div>
         <p className="text-xl font-bold">{name ? `${name}, чем помочь?` : 'Чем помочь?'}</p>
         <p className="mt-1 text-sm text-ink-soft">Спросите о плане, команде, отгуле или доступах.</p>
@@ -118,6 +118,8 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
   const messages = useChat((s) => s.messages);
   const streaming = useChat((s) => s.streaming);
   const history = useHistory();
+  const mood = useBuddyMood();
+  const lastId = messages[messages.length - 1]?.id;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [stuck, setStuck] = useState(true);
 
@@ -147,14 +149,14 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
       )}
     >
       <header className="flex items-center gap-3 border-b border-line bg-white px-5 py-3.5">
-        <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-brand text-white" aria-hidden>
-          <MessageCircle className="h-5 w-5" />
+        <span className="relative grid h-11 w-11 place-items-center rounded-xl bg-brand-soft" aria-hidden>
+          <Buddy mood={mood} size={40} />
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-ok" />
         </span>
         <div className="leading-tight">
           <h2 className="font-bold">AI-buddy</h2>
           <p className="text-xs text-ink-muted">
-            {streaming ? 'печатает…' : 'ваш наставник, отвечает сразу'}
+            {mood === 'thinking' ? 'думает…' : streaming ? 'печатает…' : 'ваш наставник, отвечает сразу'}
           </p>
         </div>
       </header>
@@ -180,7 +182,7 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
         ) : (
           <div className="space-y-5">
             {messages.map((m) => (
-              <Message key={m.id} msg={m} />
+              <Message key={m.id} msg={m} mood={m.id === lastId ? mood : undefined} />
             ))}
           </div>
         )}

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { AlertTriangle, RotateCw, Square } from 'lucide-react';
 import { useChat, type ChatMessage } from '@/stores/chat';
+import { Buddy, type BuddyMood } from '@/components/Buddy';
 import { Markdown } from '@/components/Markdown';
 import { Button } from '@/components/ui/Button';
 import { SourceChips } from './SourceChips';
@@ -19,25 +20,16 @@ export function StatusLine({ text }: { text: string }) {
   );
 }
 
-function BotAvatar() {
+/** Аватар ответа: «живой» только у последнего сообщения, у остальных — неподвижный. */
+function BotAvatar({ mood }: { mood?: BuddyMood }) {
   return (
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand text-white" aria-hidden>
-      <svg viewBox="0 0 32 32" className="h-6 w-6">
-        <circle cx="11.5" cy="14" r="2.6" fill="currentColor" />
-        <circle cx="20.5" cy="14" r="2.6" fill="currentColor" />
-        <path
-          d="M11 20.5c2.8 2.4 7.2 2.4 10 0"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          fill="none"
-          strokeLinecap="round"
-        />
-      </svg>
+    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-soft" aria-hidden>
+      <Buddy mood={mood ?? 'idle'} size={30} compact still={!mood} />
     </span>
   );
 }
 
-export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
+export const Message = memo(function Message({ msg, mood }: { msg: ChatMessage; mood?: BuddyMood }) {
   const retry = useChat((s) => s.retry);
   const streamingNow = useChat((s) => s.streaming);
 
@@ -54,7 +46,7 @@ export const Message = memo(function Message({ msg }: { msg: ChatMessage }) {
   const empty = !msg.text && !msg.actions.length && !msg.error;
   return (
     <div className="flex gap-2.5 animate-fade-up">
-      <BotAvatar />
+      <BotAvatar mood={mood} />
       <div className="min-w-0 max-w-[92%] flex-1">
         {(msg.text || (!msg.status && empty && !msg.stopped)) && (
           <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-white px-4 py-2.5 shadow-card">
