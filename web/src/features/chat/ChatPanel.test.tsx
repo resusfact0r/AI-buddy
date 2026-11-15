@@ -1,10 +1,11 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { appendHistory } from '@/mocks/db';
 import { useArticle } from '@/features/knowledge/articleStore';
 import { ArticleSheet } from '@/features/knowledge/ArticleSheet';
 import { renderUi } from '@/test/utils';
 import { ChatPanel } from './ChatPanel';
+import { FOUND_MS } from './useBuddyMood';
 
 describe('ChatPanel', () => {
   it('подсказки → стрим → источник открывает статью', async () => {
@@ -84,5 +85,22 @@ describe('ChatPanel', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Что мне согласовать?' })).toBeInTheDocument(),
     );
+  });
+
+  it('Бадди на пустом экране радуется при наведении курсора и возвращается к простою', async () => {
+    renderUi(<ChatPanel />, { as: 'lead_elena' });
+    await screen.findByText('Елена, чем помочь?');
+    const buddy = screen.getByRole('log').querySelector('svg.buddy')!;
+    expect(buddy).toHaveAttribute('data-mood', 'idle');
+
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(buddy.parentElement!);
+      expect(buddy).toHaveAttribute('data-mood', 'found');
+      act(() => vi.advanceTimersByTime(FOUND_MS));
+      expect(buddy).toHaveAttribute('data-mood', 'idle');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

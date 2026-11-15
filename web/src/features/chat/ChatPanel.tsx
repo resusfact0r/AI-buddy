@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/States';
 import { Message } from './Message';
 import { Composer } from './Composer';
-import { useBuddyMood } from './useBuddyMood';
+import { FOUND_MS, useBuddyMood } from './useBuddyMood';
 
 const CHIP =
   'rounded-full border border-line bg-white text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-50';
@@ -80,11 +80,28 @@ function SuggestionBar() {
   );
 }
 
+/** Бадди на пустом экране: при наведении курсора коротко радуется, затем возвращается к простою. */
+function GreetingBuddy() {
+  const [cheering, setCheering] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const cheer = () => {
+    clearTimeout(timer.current);
+    setCheering(true);
+    timer.current = setTimeout(() => setCheering(false), FOUND_MS);
+  };
+  return (
+    <span className="inline-block" onMouseEnter={cheer}>
+      <Buddy size={112} mood={cheering ? 'found' : 'idle'} />
+    </span>
+  );
+}
+
 function EmptyChat() {
   const name = useSession((s) => s.user?.display_name.split(' ')[0]);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-4 py-8 text-center">
-      <Buddy size={112} />
+      <GreetingBuddy />
       <div>
         <p className="text-xl font-bold">{name ? `${name}, чем помочь?` : 'Чем помочь?'}</p>
         <p className="mt-1 text-sm text-ink-soft">Спросите о плане, команде, отгуле или доступах.</p>
