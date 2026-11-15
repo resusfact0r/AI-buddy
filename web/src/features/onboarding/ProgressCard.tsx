@@ -21,7 +21,7 @@ export function ProgressCard() {
         </Link>
       </div>
       <div className="mt-3 flex items-end gap-3">
-        <span className="text-4xl font-extrabold tabular-nums tracking-tight">{p.percent}%</span>
+        <span className="text-4xl font-bold tabular-nums tracking-tight">{p.percent}%</span>
         <span className="pb-1.5 text-sm text-ink-soft">
           {p.done_tasks} из {p.total_tasks} обязательных задач
         </span>
@@ -35,11 +35,14 @@ export function ProgressCard() {
         aria-label="Общий прогресс"
       >
         <div
-          className="h-full rounded-full bg-[linear-gradient(90deg,#0099F7,#965EEB)] transition-[width] duration-700 ease-out"
-          style={{ width: `${p.percent}%` }}
+          className="h-full w-full origin-left bg-brand transition-transform duration-200 ease-out"
+          style={{ transform: `scaleX(${p.percent / 100})` }}
         />
       </div>
-      <ol className="mt-5 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4" aria-label="Этапы">
+      <ol
+        className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-x-3 gap-y-4"
+        aria-label="Этапы"
+      >
         {p.stages.map((s, i) => (
           <li key={s.id} className="relative" aria-current={s.status === 'current' ? 'step' : undefined}>
             <div className="flex items-center gap-2">
@@ -55,7 +58,7 @@ export function ProgressCard() {
               </span>
               <span
                 className={cn(
-                  'text-sm font-semibold leading-tight',
+                  'w-min text-sm font-semibold leading-tight',
                   s.status === 'upcoming' && 'text-ink-muted',
                 )}
               >

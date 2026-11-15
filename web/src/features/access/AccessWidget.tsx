@@ -32,8 +32,8 @@ export function AccessWidget() {
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-canvas" aria-hidden>
           <div
-            className="h-full rounded-full bg-violet transition-[width] duration-700"
-            style={{ width: `${pct}%` }}
+            className="h-full w-full origin-left bg-violet transition-transform duration-200 ease-out"
+            style={{ transform: `scaleX(${pct / 100})` }}
           />
         </div>
       </div>

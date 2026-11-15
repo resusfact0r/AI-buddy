@@ -19,7 +19,7 @@ function PersonCard({ role, person }: { role: string; person: Person | null }) {
         <span className="h-10 w-10 shrink-0 rounded-full bg-line" />
       )}
       <div className="min-w-0 leading-tight">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{role}</div>
+        <div className="text-xs text-ink-muted">{role}</div>
         <div className="truncate font-semibold">{person?.display_name ?? 'Не назначен'}</div>
         {person?.contact && (
           <div className="flex items-center gap-1 truncate text-xs text-ink-soft">
@@ -51,9 +51,9 @@ export function WelcomeCard() {
   const first = user.display_name.split(' ')[0];
   return (
     <section className="card overflow-hidden" aria-labelledby="welcome-title">
-      <div className="bg-[linear-gradient(120deg,#E5F4FF_0%,#F1E9FD_100%)] px-6 pb-5 pt-6">
-        <h1 id="welcome-title" className="text-[26px] font-extrabold leading-tight tracking-tight">
-          Привет, {first}! 👋
+      <div className="bg-brand-soft px-6 pb-5 pt-6">
+        <h1 id="welcome-title" className="text-title font-bold">
+          Привет, {first}
         </h1>
         <p className="mt-1 text-ink-soft">
           {team ? (

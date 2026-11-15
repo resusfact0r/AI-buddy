@@ -78,14 +78,14 @@ export function AppShell() {
                 }
               >
                 <n.icon className="h-4 w-4" aria-hidden />
-                <span className="hidden md:inline">{n.label}</span>
-                <span className="sr-only md:hidden">{n.label}</span>
+                <span className="hidden lg:inline">{n.label}</span>
+                <span className="sr-only lg:hidden">{n.label}</span>
               </NavLink>
             ))}
           </nav>
           {user && (
             <div className="flex items-center gap-3">
-              <div className="hidden text-right leading-tight sm:block">
+              <div className="hidden text-right leading-tight xl:block">
                 <div className="text-sm font-semibold">{user.display_name}</div>
                 <div className="text-xs text-ink-muted">{ROLE_LABEL[user.role]}</div>
               </div>

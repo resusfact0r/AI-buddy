@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowDown, Sparkles } from 'lucide-react';
+import { ArrowDown, MessageCircle } from 'lucide-react';
 import { agentApi } from '@/api/agent';
 import { backendApi } from '@/api/backend';
 import { qk } from '@/api/queryKeys';
@@ -12,10 +12,18 @@ import { ErrorState } from '@/components/ui/States';
 import { Message } from './Message';
 import { Composer } from './Composer';
 
+const CHIP =
+  'rounded-full border border-line bg-white text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-50';
+
+function useSuggestions() {
+  return useQuery({ queryKey: qk.suggestions, queryFn: agentApi.suggestions, staleTime: 5 * 60_000 });
+}
+
+/** Подсказки в пустом чате — по центру, крупно. */
 function Suggestions() {
   const send = useChat((s) => s.send);
   const streaming = useChat((s) => s.streaming);
-  const q = useQuery({ queryKey: qk.suggestions, queryFn: agentApi.suggestions, staleTime: 5 * 60_000 });
+  const q = useSuggestions();
   if (q.isPending) {
     return (
       <div className="flex flex-wrap justify-center gap-2" aria-label="Загрузка подсказок">
@@ -34,7 +42,33 @@ function Suggestions() {
             type="button"
             disabled={streaming}
             onClick={() => void send(s.text)}
-            className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
+            className={cn(CHIP, 'px-4 py-2 text-sm font-medium shadow-card')}
+          >
+            {s.text}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Подсказки над полем ввода, когда разговор уже идёт: только ещё не заданные вопросы. */
+function SuggestionBar() {
+  const send = useChat((s) => s.send);
+  const messages = useChat((s) => s.messages);
+  const q = useSuggestions();
+  if (!q.data) return null;
+  const asked = messages.filter((m) => m.role === 'user').map((m) => m.text.trim());
+  const rest = q.data.suggestions.filter((s) => !asked.includes(s.text.trim()));
+  if (rest.length === 0) return null;
+  return (
+    <ul className="-mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-0.5" aria-label="Можно спросить">
+      {rest.map((s) => (
+        <li key={s.id} className="shrink-0">
+          <button
+            type="button"
+            onClick={() => void send(s.text)}
+            className={cn(CHIP, 'h-8 whitespace-nowrap px-3 text-sm')}
           >
             {s.text}
           </button>
@@ -49,7 +83,7 @@ function EmptyChat() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-5 px-4 py-8 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-soft text-brand" aria-hidden>
-        <Sparkles className="h-7 w-7" />
+        <MessageCircle className="h-7 w-7" />
       </span>
       <div>
         <p className="text-xl font-bold">{name ? `${name}, чем помочь?` : 'Чем помочь?'}</p>
@@ -114,7 +148,7 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
     >
       <header className="flex items-center gap-3 border-b border-line bg-white px-5 py-3.5">
         <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-brand text-white" aria-hidden>
-          <Sparkles className="h-5 w-5" />
+          <MessageCircle className="h-5 w-5" />
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-ok" />
         </span>
         <div className="leading-tight">
@@ -166,8 +200,9 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
       )}
 
       <div className="border-t border-line bg-white/70 p-3">
+        {messages.length > 0 && !streaming && <SuggestionBar />}
         <Composer autoFocus={autoFocus} />
-        <p className="mt-1.5 px-1 text-[11px] text-ink-muted">
+        <p className="mt-1.5 px-1 text-xs text-ink-muted">
           Enter — отправить, Shift+Enter — новая строка. AI-buddy может ошибаться — действия выполняются
           только после вашего подтверждения.
         </p>

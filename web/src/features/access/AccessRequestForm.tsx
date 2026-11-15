@@ -103,7 +103,7 @@ export function AccessRequestForm({
       </fieldset>
       <Field label="Зачем нужен доступ" error={shown.reason}>
         <textarea
-          className="input min-h-[64px] resize-y"
+          className="input min-h-16 resize-y"
           rows={2}
           value={reason}
           onChange={(e) => {

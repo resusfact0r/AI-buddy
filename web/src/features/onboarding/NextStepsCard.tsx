@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Check, Lock, Sparkles } from 'lucide-react';
+import { Check, Lock, MessageCircle } from 'lucide-react';
 import type { Task } from '@/api/schemas';
 import { askBuddy } from '@/stores/chat';
 import { Button } from '@/components/ui/Button';
@@ -14,12 +14,7 @@ function StepCard({ task, index, onAsk }: { task: Task; index: number; onAsk: (t
   const update = useUpdateTask();
   const done = task.status === 'done';
   return (
-    <li
-      className={cn(
-        'rounded-2xl border p-4 transition-colors',
-        done ? 'border-ok/30 bg-ok-soft/50' : 'border-line bg-white',
-      )}
-    >
+    <li className={cn('rounded-2xl p-4 transition-colors', done ? 'bg-ok-soft' : 'bg-canvas')}>
       <div className="flex items-start gap-3">
         <span
           className={cn(
@@ -70,7 +65,7 @@ function StepCard({ task, index, onAsk }: { task: Task; index: number; onAsk: (t
           </Button>
         )}
         <Button size="sm" variant="outline" onClick={() => onAsk(task)}>
-          <Sparkles className="h-4 w-4 text-brand" aria-hidden /> Спросить AI-buddy
+          <MessageCircle className="h-4 w-4 text-brand" aria-hidden /> Спросить AI-buddy
         </Button>
       </div>
     </li>
@@ -96,7 +91,7 @@ export function NextStepsCard({ onAsk }: { onAsk?: () => void }) {
         )}
       </div>
       {q.data.steps.length === 0 ? (
-        <EmptyState title="Все шаги выполнены 🎉" text="План адаптации пройден. Отличная работа!" />
+        <EmptyState title="Все шаги выполнены" text="План адаптации пройден полностью." />
       ) : (
         <ol className="space-y-2.5">
           {q.data.steps.map((t, i) => (

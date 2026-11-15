@@ -110,7 +110,7 @@ export function LeaveForm({
       </Field>
       <Field label="Комментарий (необязательно)" error={shown.comment}>
         <textarea
-          className="input min-h-[64px] resize-y"
+          className="input min-h-16 resize-y"
           rows={2}
           value={values.comment}
           onChange={(e) => set('comment', e.target.value)}

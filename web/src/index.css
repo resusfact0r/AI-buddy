@@ -20,12 +20,12 @@
     @apply rounded-2xl bg-white shadow-card;
   }
   .input {
-    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-ink-muted
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-body text-ink placeholder:text-ink-muted
       transition-colors hover:border-ink-muted/60 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20
       disabled:cursor-not-allowed disabled:bg-canvas aria-[invalid=true]:border-danger;
   }
   .prose-chat {
-    @apply text-[15px] leading-relaxed;
+    @apply text-body leading-relaxed;
   }
   .prose-chat p {
     @apply my-1.5;
