@@ -1,0 +1,16 @@
+**
+!backend/
+!backend/**
+!agent/
+!agent/**
+!web/
+!web/**
+!deploy/
+!deploy/railway/
+!deploy/railway/start.sh
+**/node_modules
+**/dist
+**/.env*
+**/coverage*
+**/.git
+**/*.exe
