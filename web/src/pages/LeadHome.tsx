@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { WelcomeCard } from '@/features/onboarding/WelcomeCard';
 import { ApprovalsList } from '@/features/requests/ApprovalsList';
 import { usePendingApprovals } from '@/features/requests/hooks';
-import { SplitLayout } from './HomePage';
+import { SplitLayout } from '@/app/SplitLayout';
 import { FirstDayReadiness } from '@/features/onboarding/FirstDayReadiness';
 import { config } from '@/config';
 

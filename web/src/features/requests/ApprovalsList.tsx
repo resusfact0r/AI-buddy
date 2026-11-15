@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { CalendarDays, Check, KeyRound, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { WorkRequest } from '@/api/schemas';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
+import { IconTile } from '@/components/ui/IconTile';
+import { QueryView } from '@/components/ui/QueryView';
 import { SkeletonCard } from '@/components/ui/Skeleton';
-import { EmptyState, ErrorState } from '@/components/ui/States';
+import { EmptyState } from '@/components/ui/States';
 import { formatDateTime } from '@/lib/dates';
 import { notifyError } from '@/lib/toast';
-import { cn } from '@/lib/cn';
 import { useDecision, usePendingApprovals } from './hooks';
 import { requestReason, requestSubject, requestTitle } from './describe';
+import { REQUEST_TYPE_META } from './requestType';
 
 function ApprovalCard({ r }: { r: WorkRequest }) {
   const m = useDecision();
@@ -28,7 +30,7 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
         onError: (e) => notifyError(e, () => decide(decision)),
       },
     );
-  const Icon = r.type === 'leave' ? CalendarDays : KeyRound;
+  const meta = REQUEST_TYPE_META[r.type];
   const reason = requestReason(r);
   return (
     <li className="card animate-fade-up p-5">
@@ -42,15 +44,7 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
             </span>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
-            <span
-              className={cn(
-                'grid h-7 w-7 place-items-center rounded-lg',
-                r.type === 'leave' ? 'bg-brand-soft text-brand' : 'bg-violet-soft text-violet',
-              )}
-              aria-hidden
-            >
-              <Icon className="h-4 w-4" />
-            </span>
+            <IconTile icon={meta.icon} tone={meta.tone} size="xs" />
             <span className="font-semibold">{requestTitle(r)}</span>
             {r.type === 'leave' && <span className="text-ink-soft">· {requestSubject(r)}</span>}
           </div>
@@ -60,7 +54,7 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
       {showComment && (
         <Field label="Комментарий для сотрудника" className="mt-3">
           <textarea
-            className="input min-h-[56px]"
+            className="input min-h-14"
             rows={2}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -95,26 +89,21 @@ function ApprovalCard({ r }: { r: WorkRequest }) {
 }
 
 export function ApprovalsList({ compact }: { compact?: boolean }) {
-  const q = usePendingApprovals();
-  if (q.isPending) return <SkeletonCard lines={3} />;
-  if (q.isError)
-    return (
-      <div className="card">
-        <ErrorState error={q.error} onRetry={() => void q.refetch()} />
-      </div>
-    );
-  if (q.data.items.length === 0)
-    return (
-      <div className="card">
-        <EmptyState title="Всё согласовано 🎉" text="Новые заявки стажёров появятся здесь автоматически." />
-      </div>
-    );
-  const items = compact ? q.data.items.slice(0, 4) : q.data.items;
   return (
-    <ul className="space-y-3" aria-label="Заявки на согласование">
-      {items.map((r) => (
-        <ApprovalCard key={r.id} r={r} />
-      ))}
-    </ul>
+    <QueryView query={usePendingApprovals()} loading={<SkeletonCard lines={3} />}>
+      {(data) =>
+        data.items.length === 0 ? (
+          <div className="card">
+            <EmptyState title="Всё согласовано" text="Новые заявки стажёров появятся здесь автоматически." />
+          </div>
+        ) : (
+          <ul className="space-y-3" aria-label="Заявки на согласование">
+            {(compact ? data.items.slice(0, 4) : data.items).map((r) => (
+              <ApprovalCard key={r.id} r={r} />
+            ))}
+          </ul>
+        )
+      }
+    </QueryView>
   );
 }

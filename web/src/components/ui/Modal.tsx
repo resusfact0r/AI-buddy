@@ -21,7 +21,7 @@ export function Modal({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-[1px]" />
         <Dialog.Content
           {...(description ? {} : { 'aria-describedby': undefined })}
-          className="fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl bg-white p-6 shadow-pop data-[state=open]:animate-fade-up"
+          className="fixed inset-0 z-50 m-auto h-fit max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-pop data-[state=open]:animate-fade-up"
         >
           <div className="mb-4 flex items-start gap-3">
             <div className="flex-1">

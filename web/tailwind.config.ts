@@ -4,6 +4,10 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontSize: {
+        body: ['15px', '22px'],
+        title: ['28px', { lineHeight: '34px', letterSpacing: '-0.02em' }],
+      },
       fontFamily: {
         sans: ['"Manrope Variable"', 'Manrope', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },

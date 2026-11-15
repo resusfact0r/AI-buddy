@@ -57,7 +57,7 @@ docker run -p 3000:3000 -e API_URL=http://localhost:8080/api/v1 -e AGENT_URL=htt
 docker run -p 3000:3000 -e USE_MOCKS=true ai-buddy-web   # демо без бэкендов
 ```
 
-В общем `docker-compose.yml` в корне репозитория — сервис `web` (переменные `WEB_API_URL`, `WEB_AGENT_URL`, `WEB_USE_MOCKS`).
+В общем `docker-compose.yml` в корне репозитория — сервис `web`.
 
 ## Структура `src/`
 
@@ -87,4 +87,4 @@ mocks/        MSW: данные, «БД» с бизнес-правилами, с
 lib/          даты, тосты, валидация форм
 ```
 
-Контракты: [`../docs/openapi.yaml`](../docs/openapi.yaml) (Бэкенд 1) и [`../docs/agent-api.md`](../docs/agent-api.md) (агент). Zod-схемы фронта ещё не сверены с ними — пока используйте режим моков.
+Контракт API, на который рассчитан фронт: [`../docs/frontend-contract.md`](../docs/frontend-contract.md).

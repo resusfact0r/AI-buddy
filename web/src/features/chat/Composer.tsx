@@ -66,7 +66,7 @@ export function Composer({ autoFocus }: { autoFocus?: boolean }) {
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder="Спросите AI-buddy…"
-        className="max-h-40 min-h-[40px] flex-1 resize-none bg-transparent py-2 text-[15px] outline-none placeholder:text-ink-muted focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="max-h-40 min-h-10 flex-1 resize-none bg-transparent py-2 text-body outline-none placeholder:text-ink-muted focus-visible:ring-0 focus-visible:ring-offset-0"
       />
       {streaming ? (
         <button

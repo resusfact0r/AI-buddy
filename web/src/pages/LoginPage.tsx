@@ -73,15 +73,13 @@ export function LoginPage() {
   const pendingUser = m.isPending ? m.variables?.username : null;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(1200px_600px_at_10%_-10%,#D9F0FF_0%,transparent_60%),radial-gradient(900px_500px_at_110%_110%,#EFE5FF_0%,transparent_55%)] px-4 py-10">
-      <div className="w-full max-w-[440px]">
+    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center">
             <Logo size="lg" />
           </div>
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight">
-            Наставник, который всегда рядом
-          </h1>
+          <h1 className="text-title font-bold">Наставник, который всегда рядом</h1>
           <p className="mt-2 text-ink-soft">
             Подскажет, что делать дальше, оформит отгул и запросит доступы.
           </p>
@@ -129,7 +127,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <div className="my-6 flex items-center gap-3 text-xs font-medium text-ink-muted">
             <span className="h-px flex-1 bg-line" />
             Быстрый вход для демо
             <span className="h-px flex-1 bg-line" />

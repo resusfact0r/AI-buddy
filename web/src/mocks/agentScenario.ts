@@ -130,7 +130,7 @@ export function runScenario(user: MockUser, message: string, today = toIso(new D
     steps.push(status('Смотрю заявки на согласование…'));
     const pending = pendingFor(user);
     if (pending.length === 0) {
-      say('Сейчас нет заявок, которые ждут вашего решения. 🎉');
+      say('Сейчас нет заявок, которые ждут вашего решения.');
     } else {
       say(`Ждут вашего решения: **${pending.length}**. Подготовил карточки — проверьте и подтвердите:\n`);
       for (const r of pending.slice(0, 5)) {
@@ -196,7 +196,7 @@ export function runScenario(user: MockUser, message: string, today = toIso(new D
     const p = progressFor(user.id);
     cite([src('kb-onboarding')]);
     if (!ns.current_stage) {
-      say('Все этапы плана адаптации пройдены — поздравляю! 🎉');
+      say('Все этапы плана адаптации пройдены — поздравляю!');
     } else {
       say(
         `Вы на этапе **«${ns.current_stage.title}»**, план выполнен на **${p.percent}%**. Следующие шаги:\n\n` +
@@ -213,7 +213,7 @@ export function runScenario(user: MockUser, message: string, today = toIso(new D
     steps.push(status('Проверяю доступы…'));
     cite([src('kb-access')]);
     const ov = accessFor(user);
-    const label = { granted: 'есть ✅', requested: 'запрошен ⏳', missing: 'не хватает' } as const;
+    const label = { granted: 'есть', requested: 'запрошен', missing: 'не хватает' } as const;
     say(
       `Для команды «${teamOf(user)?.name}» нужны такие системы — выдано **${ov.granted} из ${ov.total}**:\n\n` +
         ov.systems

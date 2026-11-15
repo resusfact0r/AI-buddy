@@ -27,6 +27,17 @@ describe('ChatPanel', () => {
     expect(useArticle.getState().openId).toBeNull();
   });
 
+  it('после ответа над полем ввода остаются незаданные подсказки', async () => {
+    renderUi(<ChatPanel />, { as: 'intern_anna' });
+    await userEvent.click(await screen.findByRole('button', { name: /Что мне делать дальше/ }));
+    const bar = await screen.findByRole('list', { name: 'Можно спросить' });
+    expect(within(bar).queryByRole('button', { name: /Что мне делать дальше/ })).toBeNull();
+    await userEvent.click(within(bar).getByRole('button', { name: /Какие доступы мне нужны/ }));
+    const bar2 = await screen.findByRole('list', { name: 'Можно спросить' });
+    expect(within(bar2).queryByRole('button', { name: /Какие доступы мне нужны/ })).toBeNull();
+    expect(within(bar2).getByRole('button', { name: /код-ревью/ })).toBeInTheDocument();
+  });
+
   it('Enter отправляет, Shift+Enter — перенос строки', async () => {
     renderUi(<ChatPanel />, { as: 'intern_vera' });
     const input = await screen.findByLabelText('Сообщение для AI-buddy');

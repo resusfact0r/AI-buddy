@@ -22,7 +22,7 @@ describe('ApprovalsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: `Одобрить ${r.number}` }));
     expect(screen.queryByText('«семья»')).not.toBeInTheDocument();
     await waitFor(() => expect(db.state.requests[0]!.status).toBe('approved'));
-    expect(await screen.findByText('Всё согласовано 🎉')).toBeInTheDocument();
+    expect(await screen.findByText('Всё согласовано')).toBeInTheDocument();
   });
 
   it('отклонение с комментарием', async () => {

@@ -14,10 +14,18 @@ import { Message } from './Message';
 import { Composer } from './Composer';
 import { useBuddyMood } from './useBuddyMood';
 
+const CHIP =
+  'rounded-full border border-line bg-white text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-50';
+
+function useSuggestions() {
+  return useQuery({ queryKey: qk.suggestions, queryFn: agentApi.suggestions, staleTime: 5 * 60_000 });
+}
+
+/** Подсказки в пустом чате — по центру, крупно. */
 function Suggestions() {
   const send = useChat((s) => s.send);
   const streaming = useChat((s) => s.streaming);
-  const q = useQuery({ queryKey: qk.suggestions, queryFn: agentApi.suggestions, staleTime: 5 * 60_000 });
+  const q = useSuggestions();
   if (q.isPending) {
     return (
       <div className="flex flex-wrap justify-center gap-2" aria-label="Загрузка подсказок">
@@ -36,7 +44,33 @@ function Suggestions() {
             type="button"
             disabled={streaming}
             onClick={() => void send(s.text)}
-            className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink shadow-card transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
+            className={cn(CHIP, 'px-4 py-2 text-sm font-medium shadow-card')}
+          >
+            {s.text}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Подсказки над полем ввода, когда разговор уже идёт: только ещё не заданные вопросы. */
+function SuggestionBar() {
+  const send = useChat((s) => s.send);
+  const messages = useChat((s) => s.messages);
+  const q = useSuggestions();
+  if (!q.data) return null;
+  const asked = messages.filter((m) => m.role === 'user').map((m) => m.text.trim());
+  const rest = q.data.suggestions.filter((s) => !asked.includes(s.text.trim()));
+  if (rest.length === 0) return null;
+  return (
+    <ul className="-mx-3 mb-2 flex gap-2 overflow-x-auto px-3 pb-0.5" aria-label="Можно спросить">
+      {rest.map((s) => (
+        <li key={s.id} className="shrink-0">
+          <button
+            type="button"
+            onClick={() => void send(s.text)}
+            className={cn(CHIP, 'h-8 whitespace-nowrap px-3 text-sm')}
           >
             {s.text}
           </button>
@@ -168,8 +202,9 @@ export function ChatPanel({ className, autoFocus }: { className?: string; autoFo
       )}
 
       <div className="border-t border-line bg-white/70 p-3">
+        {messages.length > 0 && !streaming && <SuggestionBar />}
         <Composer autoFocus={autoFocus} />
-        <p className="mt-1.5 px-1 text-[11px] text-ink-muted">
+        <p className="mt-1.5 px-1 text-xs text-ink-muted">
           Enter — отправить, Shift+Enter — новая строка. AI-buddy может ошибаться — действия выполняются
           только после вашего подтверждения.
         </p>
