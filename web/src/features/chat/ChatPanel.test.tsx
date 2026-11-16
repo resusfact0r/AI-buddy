@@ -87,18 +87,28 @@ describe('ChatPanel', () => {
     );
   });
 
-  it('Бадди на пустом экране радуется при наведении курсора и возвращается к простою', async () => {
+  it('Бадди на пустом экране радуется, пока наведён курсор, и уход курсора прерывает радость', async () => {
     renderUi(<ChatPanel />, { as: 'lead_elena' });
     await screen.findByText('Елена, чем помочь?');
     const buddy = screen.getByRole('log').querySelector('svg.buddy')!;
+    const target = buddy.parentElement!;
     expect(buddy).toHaveAttribute('data-mood', 'idle');
 
     vi.useFakeTimers();
     try {
-      fireEvent.mouseEnter(buddy.parentElement!);
+      fireEvent.mouseEnter(target);
       expect(buddy).toHaveAttribute('data-mood', 'found');
-      act(() => vi.advanceTimersByTime(FOUND_MS));
+
+      // Пока курсор на Бадди, радость не заканчивается по таймеру.
+      act(() => vi.advanceTimersByTime(FOUND_MS * 3));
+      expect(buddy).toHaveAttribute('data-mood', 'found');
+
+      // Уход курсора прерывает её сразу, не дожидаясь конца анимации.
+      fireEvent.mouseLeave(target);
       expect(buddy).toHaveAttribute('data-mood', 'idle');
+
+      fireEvent.mouseEnter(target);
+      expect(buddy).toHaveAttribute('data-mood', 'found');
     } finally {
       vi.useRealTimers();
     }
