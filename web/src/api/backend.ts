@@ -1,6 +1,7 @@
 import { config } from '@/config';
 import { z } from 'zod';
 import { backendHttp, newIdempotencyKey } from './http';
+import { withDirectory } from './directory';
 import {
   AccessOverviewSchema,
   AccessRequestResponseSchema,
@@ -123,22 +124,27 @@ export const backendApi = {
   },
 
   requests: (filters: { type?: RequestType | ''; status?: RequestStatus | '' } = {}) =>
-    backendHttp('/requests', { query: filters, schema: RequestListSchema }),
-  request: (id: string) => backendHttp(`/requests/${encodeURIComponent(id)}`, { schema: RequestSchema }),
+    withDirectory(backendHttp('/requests', { query: filters, schema: RequestListSchema })),
+  request: (id: string) =>
+    withDirectory(backendHttp(`/requests/${encodeURIComponent(id)}`, { schema: RequestSchema })),
 
-  pendingApprovals: () => backendHttp('/approvals/pending', { schema: RequestListSchema }),
+  pendingApprovals: () => withDirectory(backendHttp('/approvals/pending', { schema: RequestListSchema })),
   approve: (id: string, comment?: string) =>
-    backendHttp(`/requests/${encodeURIComponent(id)}/approve`, {
-      method: 'POST',
-      body: { comment: comment || undefined },
-      schema: RequestSchema,
-    }),
+    withDirectory(
+      backendHttp(`/requests/${encodeURIComponent(id)}/approve`, {
+        method: 'POST',
+        body: { comment: comment || undefined },
+        schema: RequestSchema,
+      }),
+    ),
   reject: (id: string, comment?: string) =>
-    backendHttp(`/requests/${encodeURIComponent(id)}/reject`, {
-      method: 'POST',
-      body: { comment: comment || undefined },
-      schema: RequestSchema,
-    }),
+    withDirectory(
+      backendHttp(`/requests/${encodeURIComponent(id)}/reject`, {
+        method: 'POST',
+        body: { comment: comment || undefined },
+        schema: RequestSchema,
+      }),
+    ),
 
   article: (id: string) => backendHttp(`/knowledge/${encodeURIComponent(id)}`, { schema: ArticleSchema }),
   chatHistory: (conversationId?: string | null) =>

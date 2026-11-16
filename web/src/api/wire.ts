@@ -19,13 +19,18 @@ const system = (value: unknown) => {
     name: s.name ?? s.title ?? s.system_code ?? s.system,
   };
 };
+/** У заявок бэка нет номера, только длинный hex-id. Показываем короткую форму. */
+export function shortRequestNumber(id: string): string {
+  return /^[0-9a-f]{16,}$/i.test(id) ? `№ ${id.slice(0, 6).toUpperCase()}` : id;
+}
+const REQUEST_STATUSES = ['pending', 'approved', 'rejected'];
 export function normalizeRequest(value: unknown): unknown {
   const r = object(value);
   if (!r.payload) return value;
   const p = object(r.payload);
   return {
     ...r,
-    number: r.id,
+    number: shortRequestNumber(String(r.id)),
     author: { id: r.user_id, display_name: r.user_id },
     decided_by: r.decided_by ? { id: r.decided_by, display_name: r.decided_by } : null,
     leave: r.type === 'leave' ? { ...p, leave_type: p.reason_type } : undefined,
@@ -85,9 +90,18 @@ export function normalizeAgent(event: string, value: unknown): unknown {
     const data = object(v.data);
     const requests = array(data.results).map((r) => object(object(r).request));
     if (data.id) requests.push(data);
+    const created = requests.filter((r) => r.id);
+    // Агент сообщает статус действия («done»), а в карточке нужен статус созданной заявки.
+    const statuses = [...new Set(created.map((r) => String(r.status)))];
+    const requestStatus =
+      v.status === 'done' && statuses.length === 1 && REQUEST_STATUSES.includes(statuses[0]!)
+        ? statuses[0]
+        : v.status;
     return {
       ...v,
-      request_ids: v.request_ids ?? requests.filter((r) => r.id).map((r) => String(r.id)),
+      status: requestStatus,
+      request_ids: v.request_ids ?? created.map((r) => String(r.id)),
+      request_numbers: v.request_numbers ?? created.map((r) => shortRequestNumber(String(r.id))),
       retryable: v.retryable ?? object(v.error).retryable,
     };
   }

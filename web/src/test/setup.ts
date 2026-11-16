@@ -7,6 +7,7 @@ import { mockTiming } from '@/mocks/handlers';
 import { resetDb } from '@/mocks/db';
 import { useSession } from '@/stores/session';
 import { useChat } from '@/stores/chat';
+import { resetDirectory } from '@/api/directory';
 
 mockTiming.scale = 0;
 config.useMocks = true;
@@ -16,6 +17,7 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   resetDb();
+  resetDirectory();
   useChat.getState().reset();
   useChat.setState({ onActionResult: null });
   useSession.setState({ token: null, user: null, logoutReason: null });
