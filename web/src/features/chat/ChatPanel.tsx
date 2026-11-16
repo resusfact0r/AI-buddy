@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/States';
 import { Message } from './Message';
 import { Composer } from './Composer';
-import { FOUND_MS, useBuddyMood } from './useBuddyMood';
+import { useBuddyMood } from './useBuddyMood';
 
 const CHIP =
   'rounded-full border border-line bg-white text-ink transition-colors hover:border-brand hover:text-brand disabled:opacity-50';
@@ -80,19 +80,16 @@ function SuggestionBar() {
   );
 }
 
-/** Бадди на пустом экране: при наведении курсора коротко радуется, затем возвращается к простою. */
+/** Бадди на пустом экране: радуется, пока на него наведён курсор; уход курсора сразу прерывает радость. */
 function GreetingBuddy() {
-  const [cheering, setCheering] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(timer.current), []);
-  const cheer = () => {
-    clearTimeout(timer.current);
-    setCheering(true);
-    timer.current = setTimeout(() => setCheering(false), FOUND_MS);
-  };
+  const [hovered, setHovered] = useState(false);
   return (
-    <span className="inline-block" onMouseEnter={cheer}>
-      <Buddy size={112} mood={cheering ? 'found' : 'idle'} />
+    <span
+      className="inline-block"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <Buddy size={112} mood={hovered ? 'found' : 'idle'} />
     </span>
   );
 }
